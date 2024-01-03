@@ -115,6 +115,7 @@ struct ListCategoriesResponse {
 struct Category {
     id: u32,
     user_id: u32,
+    rules: String,
     name: String,
 }
 
@@ -123,7 +124,7 @@ fn list_categories(db: &mut Connection, req: &mut Request) -> ResponseBox {
 
     let mut stmt = db
         .prepare(
-            "SELECT c.id, c.user_id, c.name, c.is_public FROM categories c \
+            "SELECT c.id, c.user_id, c.rules, c.name, c.is_public FROM categories c \
             INNER JOIN users u ON c.user_id = u.id
             WHERE u.username = ?1",
         )
@@ -134,7 +135,8 @@ fn list_categories(db: &mut Connection, req: &mut Request) -> ResponseBox {
             Ok(Category {
                 id: row.get::<_, u32>(0).unwrap(),
                 user_id: row.get::<_, u32>(1).unwrap(),
-                name: row.get::<_, String>(2).unwrap(),
+                rules: row.get::<_, String>(2).unwrap(),
+                name: row.get::<_, String>(3).unwrap(),
             })
         })
         .unwrap()
