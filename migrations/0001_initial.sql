@@ -1,0 +1,33 @@
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY NOT NULL,
+    username TEXT NOT NULL COLLATE NOCASE,
+    password TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE categories (
+    id INTEGER PRIMARY KEY NOT NULL,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    is_public INTEGER NOT NULL,
+
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+) STRICT;
+
+CREATE TABLE entries (
+    category_id INTEGER NOT NULL,
+    time INTEGER NOT NULL,
+    value TEXT NOT NULL,
+
+    FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX idx_entry_category ON entries (category_id);
+CREATE INDEX idx_entry_time ON entries (time);
+
+INSERT INTO users (id, username, password) VALUES (0, 'tmtu', 'HorseStaplerDuracellBatteries');
+INSERT INTO categories (id, user_id, name, is_public) VALUES (1, 0, 'no-hangs', 0);
+INSERT INTO categories (id, user_id, name, is_public) VALUES (2, 0, 'bouldering', 1);
+INSERT INTO entries (category_id, time, value) VALUES (1, 1704063600000, 'y');
+INSERT INTO entries (category_id, time, value) VALUES (1, 1704150000000, 'y');
+INSERT INTO entries (category_id, time, value) VALUES (1, 1704236400000, 'y');
+INSERT INTO entries (category_id, time, value) VALUES (2, 1704150000000, 'y');

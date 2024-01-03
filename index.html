@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<title>rut</title>
+<link rel="shortcut icon" href="/favicon.png">
+<style>
+th {text-align:left;}
+.box {
+margin: 1px;
+width:1em;
+height:1em;
+background-color: whitesmoke;}
+.today {
+outline: 2px solid plum;}
+.hilite {
+outline: 2px solid lightgray;}
+</style>
+
+<meta charset="utf-8" />
+
+<!-- template home page -->
+<template id="statsTemplate">
+</template>
+
+<script>
+window.onload = async function(e) {
+    await fragmentChanged();
+}
+window.onhashchange = async function(e) {
+    console.log(`new location: ${e.newURL}`);
+    await fragmentChanged();
+}
+
+async function fragmentChanged() {
+    document.body.innerHTML = "";
+
+    switch (location.hash) {
+        case "":
+        case "#":
+            console.log("Loading home page");
+            break;
+
+        default:
+            console.log("Loading stats page: " + location.hash);
+            await loadStatsPage(location.hash.substring(1));
+            break;
+    }
+}
+
+async function loadStatsPage(user) {
+	let categories = await api("/api/listCategories", { username: user });
+	console.log(categories);
+
+	let page = statsTemplate.content.cloneNode(true);
+
+	for (const category of categories.categories) {
+		let data = await api("/api/listData", { category_id: category.id });
+		console.log(data);
+
+		let title = document.createElement("h1");
+		title.innerText = category.name;
+		page.appendChild(title);
+		let heatmap = getHeatmap();
+		page.appendChild(heatmap);
+	}
+
+
+
+	document.body.appendChild(page);
+}
+
+function getHeatmap(data, method, colA, colB) {
+	let table = document.createElement("table");
+
+	var now = new Date();
+	var daysOfYear = [];
+	let start = new Date(now.getFullYear(), 0, 1);
+	let end = new Date(now.getFullYear() + 1, 0, 1);
+	for (let d = start; d < end; d.setDate(d.getDate() + 1)) {
+		daysOfYear.push(new Date(d));
+	}
+
+	let max = getMax(data, method);
+
+	let weekDays = [
+		document.createElement("tr"),
+		document.createElement("tr"),
+		document.createElement("tr"),
+		document.createElement("tr"),
+		document.createElement("tr"),
+		document.createElement("tr"),
+		document.createElement("tr"),
+	];
+
+	let monthHeaders = document.createElement("tr");
+	monthHeaders.appendChild(document.createElement("td"));
+	for (let i = 0; i < 52; i++) {
+		monthHeaders.appendChild(document.createElement("th"));
+	}
+
+	let i = 0;
+	const MONTHS = [
+		"JAN",
+		"FEB",
+		"MAR",
+		"APR",
+		"MAY",
+		"JUN",
+		"JUL",
+		"AUG",
+		"SEP",
+		"OCT",
+		"NOV",
+		"DEC",
+	];
+
+	i = 0;
+	const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
+	weekDays.forEach(d => {
+		let day = document.createElement("th");
+		day.innerText = DAYS[i++];
+		d.appendChild(day);
+
+	});
+
+	table.appendChild(monthHeaders);
+	weekDays.forEach(d => table.appendChild(d));
+
+	let padding = daysOfYear[0].getDay();
+	for (i = 0; i < padding; i++) {
+		weekDays[i].appendChild(document.createElement("td"));
+	}
+
+	i = 0;
+	let prevMonth = -1;
+	daysOfYear.forEach(d => {
+		let weekDay = d.getDay();
+
+		let isToday = new Date().setHours(0,0,0,0) == new Date(d).setHours(0,0,0,0);
+		let dataToday = findData(data, d);
+
+		let inner = document.createElement("div");
+		inner.classList.toggle("box");
+		inner.classList.toggle("today", isToday);
+		inner.classList.toggle("m"+d.getMonth());
+		let dayData = document.createElement("td");
+		dayData.appendChild(inner);
+
+
+		// dayData.innerText = ""+d.getMonth();
+		weekDays[weekDay].appendChild(dayData);
+		let m = d.getMonth();
+
+		if (m != prevMonth) {
+			prevMonth = m;
+			let col = weekDays[weekDay].children.length - 1;
+			monthHeaders.cells[col - (m * 2)].innerText = MONTHS[m];
+			monthHeaders.cells[col - (m * 2)].colSpan = 3;
+
+			monthHeaders.cells[col - (m * 2)].onmouseenter = (event) => {
+				let monthDays = table.querySelectorAll(".m"+m);
+				monthDays.forEach(d => d.classList.toggle("hilite", true));
+			};
+			monthHeaders.cells[col - (m * 2)].onmouseleave = (event) => {
+				let monthDays = table.querySelectorAll(".m"+m);
+				monthDays.forEach(d => d.classList.toggle("hilite", false));
+			};
+			monthHeaders.deleteCell(col - (m * 2) +1);
+			monthHeaders.deleteCell(col - (m * 2) +1);
+		}
+	});
+
+	return table;
+}
+
+function getMax(data, method) {
+	let max = 0;
+	let days = Array.apply(0, Array(366));
+
+	if (method == "sum") {
+		data.forEach(d => {
+			let yearDay = getDayOfYear(new Date(d.time));
+			var integerAge = parseFloat(d.value);
+
+			if(!isNaN(integerAge)) {
+				days[yearDay] += integerAge;
+			}
+		});
+	} else {
+		// frequency
+		data.forEach(d => {
+			let yearDay = getDayOfYear(new Date(d.time));
+			days[yearDay] += 1;
+		});
+	}
+
+	const max = days.reduce((a, b) => Math.max(a, b), -Infinity);
+
+	return max;
+}
+
+function getDayOfYear(d) {
+	var start = new Date(d.getFullYear(), 0, 0);
+	var diff = d - start;
+	var oneDay = 1000 * 60 * 60 * 24;
+	return Math.floor(diff / oneDay);
+}
+
+function findData(data, day) {
+	let newData = [];
+	data.forEach(d => {
+		if (new Date(day).setHours(0, 0, 0, 0) == new Date(d.time).setHours(0, 0, 0, 0)) {
+			newData.push(d);
+		}
+	});
+
+	return newData;
+}
+
+function colInterp(a, b, percent) {
+	const r1 = parseInt(a.substring(1, 3), 16);
+	const g1 = parseInt(a.substring(3, 5), 16);
+	const b1 = parseInt(a.substring(5, 7), 16);
+
+	const r2 = parseInt(b.substring(1, 3), 16);
+	const g2 = parseInt(b.substring(3, 5), 16);
+	const b2 = parseInt(b.substring(5, 7), 16);
+
+	const r = Math.round(r1 + (r2 - r1) * percent);
+	const g = Math.round(g1 + (g2 - g1) * percent);
+	const b = Math.round(b1 + (b2 - b1) * percent);
+
+	return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+function api(url, data) {
+	return fetch(url, {
+		method: "post",
+		headers: {
+			'Content-type': 'application/json'
+		},
+		body: JSON.stringify(data),
+	}).then((response) => {
+        if (!response.ok) {
+            return null;
+        }
+
+        return response.json();
+    });
+}
+</script>
+
+<!-- vi: set sw=4 ts=4: -->
