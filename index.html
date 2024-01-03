@@ -2,21 +2,23 @@
 <title>rut</title>
 <link rel="shortcut icon" href="/favicon.png">
 <style>
-th {text-align:left;}
+body {font-size: small;}
+table, th, tr, td {border-collapse:collapse;}
+.months th {text-align:left;}
 .box {
 margin: 1px;
 width:1em;
 height:1em;
 background-color: whitesmoke;}
 .today {
-outline: 2px dotted gold;}
+outline: 2px dotted black;}
 .hilite {
 outline: 2px solid lightgray;}
 .sumText {
 color:gray;
 position: absolute;
 		  transform-origin: top right;
-transform: translateX(-50%) rotate(-45deg);
+transform: translate(-70%, -20%) rotate(-45deg);
 }
 </style>
 
@@ -99,6 +101,7 @@ function getHeatmap(data, rules, colA, colB) {
 	];
 
 	let monthHeaders = document.createElement("tr");
+	monthHeaders.classList.toggle("months");
 	monthHeaders.appendChild(document.createElement("td"));
 	for (let i = 0; i < 52; i++) {
 		monthHeaders.appendChild(document.createElement("th"));
