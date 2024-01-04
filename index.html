@@ -24,6 +24,26 @@ transform: translate(-70%, -20%) rotate(-45deg);
 
 <meta charset="utf-8" />
 
+<template id="homeTemplate">
+    <h1>name</h1>
+    <table>
+        <tr>
+            <th>Name
+            <th>Rules
+            <th>Public
+    </table>
+</template>
+
+<!-- category item -->
+<template id="categoryTemplate">
+<tr>
+<td><label for="name"></label><input id="name" type="text">
+<td><label for="rules"></label><input id="rules" type="text">
+<td><label for="isPublic">is public?</label><input id="isPublic" type="checkbox">
+<td><button id="newUpdate" disabled></button>
+<td><button id="remove" disabled>remove</button>
+</template>
+
 <!-- template home page -->
 <template id="statsTemplate">
 </template>
@@ -44,6 +64,7 @@ async function fragmentChanged() {
         case "":
         case "#":
             console.log("Loading home page");
+            await loadHomePage();
             break;
 
         default:
@@ -51,6 +72,93 @@ async function fragmentChanged() {
             await loadStatsPage(location.hash.substring(1));
             break;
     }
+}
+
+async function getThisUser() {
+    const localUser = localStorage.getItem("thisUser");
+    if (localUser != null) {
+        return localUser;
+    }
+
+    let thisUser = await api("/api/login", {});
+    if (thisUser != null) {
+        thisUser = thisUser.user;
+        localStorage.setItem("thisUser", thisUser);
+
+        return thisUser;
+    }
+}
+
+async function loadHomePage() {
+    let thisUser = await getThisUser()
+    let categories = await api("/api/listCategories", { username: thisUser, include_private: true });
+    categories = categories.categories;
+
+    let page = homeTemplate.content.cloneNode(true);
+    page.querySelector("h1").innerText = thisUser;
+
+
+    for (let i = 0; i < categories.length; i++) {
+        let category = categories[i];
+        let catElement = categoryTemplate.content.cloneNode(true);
+
+        let nameField = catElement.querySelector("#name");
+        let ruleField = catElement.querySelector("#rules");
+        let isPublicBox = catElement.querySelector("#isPublic");
+        let updateButton = catElement.querySelector("#newUpdate");
+        let removeButton = catElement.querySelector("#remove");
+
+        nameField.value = category.name;
+        ruleField.value = category.rules;
+        isPublicBox.checked = category.is_public;
+        updateButton.innerText = "update";
+
+        nameField.onchange = (event) => {
+            if (isValid(nameField)) {
+                updateButton.removeAttribute("disabled")
+            } else {
+                updateButton.setAttribute("disabled", "disabled");
+            }
+        };
+        updateButton.onclick = async (event) => {
+            await api("/api/updateCategory", { category_id: category.id, name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked });
+            await fragmentChanged();
+        }
+        removeButton.removeAttribute("disabled");
+        removeButton.onclick = async (event) => {
+            await api("/api/removeCategory", { category_id: category.id });
+            await fragmentChanged();
+        }
+
+        page.querySelector("table").appendChild(catElement);
+    }
+
+    let catElement = categoryTemplate.content.cloneNode(true);
+    let nameField = catElement.querySelector("#name");
+
+    let ruleField = catElement.querySelector("#rules");
+    let isPublicBox = catElement.querySelector("#isPublic");
+    let newButton = catElement.querySelector("#newUpdate");
+    newButton.innerText = "new";
+    nameField.onchange = (event) => {
+        if (isValid(nameField)) {
+            newButton.removeAttribute("disabled")
+        } else {
+            newButton.setAttribute("disabled", "disabled");
+        }
+    };
+    newButton.onclick = async (event) => {
+        await api("/api/createCategory", { name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked });
+        await fragmentChanged();
+    }
+
+    page.querySelector("table").appendChild(catElement);
+
+    document.body.appendChild(page);
+}
+
+function isValid(nameField, ruleField, publicBox) {
+    return nameField.value.length > 0;
 }
 
 async function loadStatsPage(user) {
@@ -72,8 +180,6 @@ async function loadStatsPage(user) {
 		page.appendChild(heatmap);
 	}
 
-
-
 	document.body.appendChild(page);
 }
 
@@ -83,9 +189,9 @@ function getHeatmap(data, rules) {
 	let colA = rules.fromCol != null ? rules.fromCol : "#c5ffc2";
 	let colB = rules.toCol != null ? rules.toCol : "#51ff47";
 
-	var now = new Date();
-	var daysOfYear = [];
-	let start = new Date(now.getFullYear(), 0, 1);
+    let now = new Date();
+    let daysOfYear = [];
+    let start = new Date(now.getFullYear(), 0, 1);
 	let end = new Date(now.getFullYear() + 1, 0, 1);
 	for (let d = start; d < end; d.setDate(d.getDate() + 1)) {
 		daysOfYear.push(new Date(d));
@@ -221,9 +327,9 @@ function getHeatmap(data, rules) {
 function getValues(data, max, method) {
 	if (method == "sum") {
 		return data.reduce((a, b) => {
-			var value = parseFloat(b.value);
+            let value = parseFloat(b.value);
 
-			if(!isNaN(value)) {
+            if(!isNaN(value)) {
 				return value;
 			} else {
 				return 0;
@@ -259,10 +365,10 @@ function getMax(data, method) {
 }
 
 function getDayOfYear(d) {
-	var start = new Date(d.getFullYear(), 0, 0);
-	var diff = d - start;
-	var oneDay = 1000 * 60 * 60 * 24;
-	return Math.floor(diff / oneDay);
+    let start = new Date(d.getFullYear(), 0, 0);
+    let diff = d - start;
+    let oneDay = 1000 * 60 * 60 * 24;
+    return Math.floor(diff / oneDay);
 }
 
 function findData(data, day) {
