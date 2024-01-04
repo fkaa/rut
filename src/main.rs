@@ -1,7 +1,7 @@
 use std::fs;
 
 use log::{debug, info};
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 use rusqlite_migration::{Migrations, M};
 use serde::{Deserialize, Serialize};
 use tiny_http::{Request, Response, ResponseBox};
@@ -48,6 +48,45 @@ macro_rules! try_unwrap {
     }};
 }
 
+fn get_auth(req: &Request) -> Option<(String, String)> {
+    todo!()
+}
+
+macro_rules! try_auth {
+    ($db:expr, $req:expr) => {{
+        let Some((user, pass)) = get_auth($req) else {
+            return Response::from_string("")
+                .with_header(
+                    tiny_http::Header::from_bytes(
+                        &b"WWW-Authenticate"[..],
+                        &b"Basic realm=\"my realm\""[..],
+                    )
+                    .unwrap(),
+                )
+                .with_status_code(401)
+                .boxed();
+        };
+
+        let user: Option<u32> = $db
+            .query_row(
+                "SELECT id \
+                FROM users WHERE username=?1 AND password=?2",
+                params![user, pass],
+                |row| Ok(row.get(0).unwrap()),
+            )
+            .optional()
+            .unwrap();
+
+        let Some(user) = user else {
+            return Response::from_string("Invalid login")
+                .with_status_code(401)
+                .boxed();
+        };
+
+        user
+    }};
+}
+
 const MIGRATIONS: [M; 1] = [M::up(include_str!("../migrations/0001_initial.sql"))];
 
 fn main() {
@@ -90,7 +129,7 @@ fn get_response(db: &mut Connection, req: &mut Request) -> ResponseBox {
             "api/listCategories" => return list_categories(db, req),
             "api/addCategory" => {}
             "api/listData" => return list_data(db, req),
-            "api/addData" => {}
+            "api/addData" => return add_data(db, req),
             "api/removeData" => {}
             _ => {}
         }
@@ -104,6 +143,7 @@ fn get_response(db: &mut Connection, req: &mut Request) -> ResponseBox {
 #[derive(Deserialize)]
 struct ListCategoriesRequest {
     username: String,
+    include_private: bool,
 }
 
 #[derive(Serialize)]
@@ -122,9 +162,15 @@ struct Category {
 fn list_categories(db: &mut Connection, req: &mut Request) -> ResponseBox {
     let r: ListCategoriesRequest = try_json!(req);
 
+    let auth_user_id = if r.include_private {
+        Some(try_auth!(db, req))
+    } else {
+        None
+    };
+
     let mut stmt = db
         .prepare(
-            "SELECT c.id, c.user_id, c.rules, c.name, c.is_public FROM categories c \
+            "SELECT c.id, c.user_id, c.rules, c.name, c.is_public, c.user_id FROM categories c \
             INNER JOIN users u ON c.user_id = u.id
             WHERE u.username = ?1",
         )
@@ -132,18 +178,31 @@ fn list_categories(db: &mut Connection, req: &mut Request) -> ResponseBox {
 
     let categories = stmt
         .query_map(params![&r.username], |row| {
-            Ok(Category {
-                id: row.get::<_, u32>(0).unwrap(),
-                user_id: row.get::<_, u32>(1).unwrap(),
-                rules: row.get::<_, String>(2).unwrap(),
-                name: row.get::<_, String>(3).unwrap(),
-            })
+            let id = row.get::<_, u32>(0).unwrap();
+            let user_id = row.get::<_, u32>(1).unwrap();
+            let rules = row.get::<_, String>(2).unwrap();
+            let name = row.get::<_, String>(3).unwrap();
+            let is_public = row.get::<_, u32>(4).unwrap() == 1;
+            let is_owner = auth_user_id.map(|id| id == user_id) == Some(true);
+
+            if !is_public && !is_owner {
+                Ok(None)
+            } else {
+                Ok(Some(Category {
+                    id,
+                    user_id,
+                    rules,
+                    name,
+                }))
+            }
         })
         .unwrap()
-        .collect::<Result<Vec<Category>, _>>()
+        .collect::<Result<Vec<Option<Category>>, _>>()
         .unwrap();
 
-    to_json!(&ListCategoriesResponse { categories })
+    to_json!(&ListCategoriesResponse {
+        categories: categories.into_iter().filter_map(|c| c).collect::<Vec<_>>()
+    })
 }
 
 #[derive(Deserialize)]
@@ -156,7 +215,7 @@ struct ListDataResponse {
     data: Vec<Data>,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 struct Data {
     time: u64,
     value: String,
@@ -164,6 +223,34 @@ struct Data {
 
 fn list_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
     let r: ListDataRequest = try_json!(req);
+
+    let mut stmt = db
+        .prepare("SELECT e.time, e.value FROM entries e WHERE e.category_id = ?1")
+        .unwrap();
+
+    let data = stmt
+        .query_map(params![&r.category_id], |row| {
+            Ok(Data {
+                time: row.get::<_, u64>(0).unwrap(),
+                value: row.get::<_, String>(1).unwrap(),
+            })
+        })
+        .unwrap()
+        .collect::<Result<Vec<Data>, _>>()
+        .unwrap();
+
+    to_json!(&ListDataResponse { data })
+}
+
+#[derive(Deserialize)]
+struct AddDataRequest {
+    category_id: u32,
+    data: Data,
+}
+
+fn add_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
+    let user_id = try_auth!(db, req);
+    let r: AddDataRequest = try_json!(req);
 
     let mut stmt = db
         .prepare("SELECT e.time, e.value FROM entries e WHERE e.category_id = ?1")

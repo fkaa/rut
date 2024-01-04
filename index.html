@@ -54,7 +54,7 @@ async function fragmentChanged() {
 }
 
 async function loadStatsPage(user) {
-	let categories = await api("/api/listCategories", { username: user });
+	let categories = await api("/api/listCategories", { username: user, include_private: false });
 	console.log(categories);
 
 	let page = statsTemplate.content.cloneNode(true);
@@ -68,7 +68,7 @@ async function loadStatsPage(user) {
 		let title = document.createElement("h1");
 		title.innerText = category.name;
 		page.appendChild(title);
-		let heatmap = getHeatmap(data.data, rules, "#c5ffc2", "#51ff47");
+		let heatmap = getHeatmap(data.data, rules);
 		page.appendChild(heatmap);
 	}
 
@@ -77,8 +77,11 @@ async function loadStatsPage(user) {
 	document.body.appendChild(page);
 }
 
-function getHeatmap(data, rules, colA, colB) {
+function getHeatmap(data, rules) {
 	let table = document.createElement("table");
+
+	let colA = rules.fromCol != null ? rules.fromCol : "#c5ffc2";
+	let colB = rules.toCol != null ? rules.toCol : "#51ff47";
 
 	var now = new Date();
 	var daysOfYear = [];
