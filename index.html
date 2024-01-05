@@ -305,7 +305,7 @@ function getHeatmap(data, rules) {
 
 	let weeklySumRow = document.createElement("tr");
 	weeklySumRow.appendChild(document.createElement("td"));
-	if (rules.style == "weekly-sum") {
+	if (rules.style === "weekly-sum" || rules.style === "weekly-avg") {
 		table.appendChild(weeklySumRow);
 	}
 
@@ -314,27 +314,43 @@ function getHeatmap(data, rules) {
 		weekDays[i].appendChild(document.createElement("td"));
 	}
 
+    let weeklyPrecision = rules.weeklyPrecision != null ? parseInt(rules.weeklyPrecision) : 0;
 	i = 0;
 	let prevMonth = -1;
 	let prevWeekDay = -1;
 	let weeklySum = 0;
+    let weeklyDataCount = 0;
 	daysOfYear.forEach(d => {
 		let weekDay = d.getDay();
 
 		let isNewWeek = prevWeekDay > weekDay;
 		prevWeekDay = weekDay;
 
-		if (isNewWeek && rules.style == "weekly-sum") {
-			let weekSum = document.createElement("td");
-			let d = document.createElement("span");
-			d.classList.toggle("sumText");
-			if (weeklySum > 0) {
-				d.innerText = ""+weeklySum;
-			}
-			weekSum.appendChild(d);
+		if (isNewWeek) {
+            if (rules.style === "weekly-sum") {
+                let weekSum = document.createElement("td");
+                let d = document.createElement("span");
+                d.classList.toggle("sumText");
+                if (weeklySum > 0) {
+                    d.innerText = ""+weeklySum.toFixed(weeklyPrecision);
+                }
+                weekSum.appendChild(d);
 
-			weeklySumRow.appendChild(weekSum);
-			weeklySum = 0;
+                weeklySumRow.appendChild(weekSum);
+            } else if (rules.style === "weekly-avg") {
+                let weekSum = document.createElement("td");
+                let d = document.createElement("span");
+                d.classList.toggle("sumText");
+                if (weeklySum > 0) {
+                    d.innerText = ""+(weeklySum/weeklyDataCount).toFixed(weeklyPrecision);
+                }
+                weekSum.appendChild(d);
+
+                weeklySumRow.appendChild(weekSum);
+            }
+
+            weeklyDataCount = 0;
+            weeklySum = 0;
 		}
 
 		let isToday = new Date().setHours(0,0,0,0) == new Date(d).setHours(0,0,0,0);
@@ -346,6 +362,7 @@ function getHeatmap(data, rules) {
 		inner.classList.toggle("m"+d.getMonth());
 
 		if (dataToday.length > 0) {
+            weeklyDataCount++;
 			let value = getValues(dataToday, max, rules.method);
 			console.log(value);
 			inner.style.background = colInterp(colA, colB, max === min ? 0 : (value - min) / (max - min));
@@ -354,12 +371,8 @@ function getHeatmap(data, rules) {
 		}
 
 		let dayData = document.createElement("td");
-
-
 		dayData.appendChild(inner);
 
-
-		// dayData.innerText = ""+d.getMonth();
 		weekDays[weekDay].appendChild(dayData);
 		let m = d.getMonth();
 
@@ -386,26 +399,40 @@ function getHeatmap(data, rules) {
 }
 
 function getValues(data, max, method) {
-	if (method == "sum") {
-		return data.reduce((a, b) => {
+	if (method === "sum") {
+        return data.reduce((a, b) => {
+            let value = parseFloat(b.value);
+
+            if (!isNaN(value)) {
+                return value;
+            } else {
+                return 0;
+            }
+        }, 0);
+    }
+
+    if (method === "avg") {
+        let i = 0;
+        return data.reduce((a, b) => {
             let value = parseFloat(b.value);
 
             if(!isNaN(value)) {
-				return value;
-			} else {
-				return 0;
-			}
-		}, 0);
-	} else {
-		// count
-		return data.length;
-	}
+                i++;
+                return a + value;
+            } else {
+                return 0;
+            }
+        }, 0) / i;
+    }
+
+    // count
+    return data.length;
 }
 
 function getDayValues(data, method) {
     let days = new Array(366).fill(null);
 
-    if (method == "sum") {
+    if (method === "sum") {
         data.forEach(d => {
             let yearDay = getDayOfYear(new Date(d.time));
             var value = parseFloat(d.value);
@@ -417,6 +444,27 @@ function getDayValues(data, method) {
                 days[yearDay] += value;
             }
         });
+    } else if (method === "avg") {
+        let counts = new Array(366).fill(0);
+
+        data.forEach(d => {
+            let yearDay = getDayOfYear(new Date(d.time));
+            var value = parseFloat(d.value);
+
+            if(!isNaN(value)) {
+                if (days[yearDay] == null) {
+                    days[yearDay] = 0;
+                }
+                counts[yearDay]++;
+                days[yearDay] += value;
+            }
+        });
+
+        for (let i = 0; i < days.length; i++) {
+            if (days[i] != null) {
+                days[i] /= counts[i];
+            }
+        }
     } else {
         // frequency
         data.forEach(d => {
