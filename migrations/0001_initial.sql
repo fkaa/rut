@@ -26,7 +26,7 @@ CREATE TABLE entries (
 CREATE INDEX idx_entry_category ON entries (category_id);
 CREATE INDEX idx_entry_time ON entries (time);
 
-INSERT INTO users (id, username, password) VALUES (0, 'tmtu', 'HorseStaplerDuracellBatteries');
+INSERT INTO users (id, username, password) VALUES (0, 'tmtu', '00YWVBDdaaLD5DWlgrFnyTEEXbU7GETt6QIC3Y7zVh0=');
 INSERT INTO categories (id, user_id, rules, name, is_public) VALUES (1, 0, 'method=sum;style=weekly-sum;from-col:#c5ffc2;to-col:#10bf00', 'pull-ups', 1);
 INSERT INTO categories (id, user_id, rules, name, is_public) VALUES (2, 0, '','no-hangs', 1);
 INSERT INTO categories (id, user_id, rules, name, is_public) VALUES (3, 0, '','bouldering', 1);

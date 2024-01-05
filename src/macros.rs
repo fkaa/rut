@@ -75,6 +75,7 @@ pub fn get_auth(req: &Request) -> Option<(String, String)> {
 #[macro_export]
 macro_rules! try_auth {
     ($db:expr, $req:expr) => {{
+        use sha2::{Digest, Sha256};
         use rusqlite::OptionalExtension;
 
         let Some((user, pass)) = crate::macros::get_auth($req) else {
@@ -90,11 +91,16 @@ macro_rules! try_auth {
                 .boxed();
         };
 
+        let mut hasher = Sha256::new();
+        hasher.update(pass.as_bytes());
+        let result = hasher.finalize();
+        let base64_pass = base64::encode(result);
+
         let user: Option<(String, u32)> = $db
             .query_row(
                 "SELECT username, id \
                 FROM users WHERE username=?1 AND password=?2",
-                params![user, pass],
+                params![user, base64_pass],
                 |row| Ok((row.get(0).unwrap(), row.get(1).unwrap())),
             )
             .optional()
@@ -102,6 +108,13 @@ macro_rules! try_auth {
 
         let Some((user, user_id)) = user else {
             return Response::from_string("Invalid login")
+                .with_header(
+                    tiny_http::Header::from_bytes(
+                        &b"WWW-Authenticate"[..],
+                        &b"Basic realm=\"my realm\""[..],
+                    )
+                    .unwrap(),
+                )
                 .with_status_code(401)
                 .boxed();
         };

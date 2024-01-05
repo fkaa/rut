@@ -1,12 +1,14 @@
-use std::fs;
+use std::{env, fs};
 
 use log::{debug, info};
 use rusqlite::{params, Connection, OptionalExtension};
 use rusqlite_migration::{Migrations, M};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use tiny_http::{Request, Response, ResponseBox};
 
 mod macros;
+
 use macros::*;
 
 mod category;
@@ -24,6 +26,26 @@ fn main() {
     migrations
         .to_latest(&mut db)
         .expect("Failed to apply migrations");
+
+    let mut args = env::args();
+    let _ = args.next();
+    if let Some(arg) = args.next() {
+        if arg == "useradd" {
+            let user = args.next().expect("Expected username");
+            let pass = args.next().expect("Expected password");
+
+            let mut hasher = Sha256::new();
+            hasher.update(pass.as_bytes());
+            let hashed_pass = hasher.finalize();
+            let base64_pass = base64::encode(hashed_pass);
+
+            db.execute("INSERT INTO users (username, password) VALUES (?1, ?2)", params![user, base64_pass]).unwrap();
+
+            log::info!("Added new user '{user}'")
+        }
+
+        return;
+    }
 
     let server = tiny_http::Server::http("127.0.0.1:8000").unwrap();
 

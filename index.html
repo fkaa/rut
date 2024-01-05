@@ -93,11 +93,6 @@ async function fragmentChanged() {
 }
 
 async function getThisUser() {
-    const localUser = localStorage.getItem("thisUser");
-    if (localUser != null) {
-        return localUser;
-    }
-
     let thisUser = await api("/api/login", {});
     if (thisUser != null) {
         thisUser = thisUser.user;
@@ -224,7 +219,9 @@ function isValid(nameField) {
 }
 
 async function loadStatsPage(user) {
-	let categories = await api("/api/listCategories", { username: user, include_private: false });
+    let thisUser = localStorage.getItem("thisUser");
+    let lookingAtOwnPage = thisUser === user;
+	let categories = await api("/api/listCategories", { username: user, include_private: lookingAtOwnPage });
 	console.log(categories);
 
 	let page = statsTemplate.content.cloneNode(true);
@@ -351,7 +348,8 @@ function getHeatmap(data, rules) {
 		if (dataToday.length > 0) {
 			let value = getValues(dataToday, max, rules.method);
 			console.log(value);
-			inner.style.background = colInterp(colA, colB, (value - min) / (max - min));
+			inner.style.background = colInterp(colA, colB, max === min ? 0 : (value - min) / (max - min));
+            inner.setAttribute("title", ""+value);
 			weeklySum += value;
 		}
 
