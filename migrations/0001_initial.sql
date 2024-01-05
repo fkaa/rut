@@ -15,6 +15,7 @@ CREATE TABLE categories (
 ) STRICT;
 
 CREATE TABLE entries (
+    id INTEGER PRIMARY KEY NOT NULL,
     category_id INTEGER NOT NULL,
     time INTEGER NOT NULL,
     value TEXT NOT NULL,

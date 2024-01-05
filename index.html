@@ -22,16 +22,34 @@ transform: translate(-70%, -20%) rotate(-45deg);
 }
 </style>
 
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta charset="utf-8" />
 
 <template id="homeTemplate">
-    <h1>name</h1>
-    <table>
-        <tr>
-            <th>Name
-            <th>Rules
-            <th>Public
-    </table>
+    <a><h1>name</h1></a>
+
+    <label for="selectCategory">Category</label><select id="selectCategory"></select>
+    <br>
+    <label for="inputDate">When</label><input id="inputDate" type="date">
+    <br>
+    <label for="inputText">Value</label><input id="inputText" type="text">
+    <br>
+    <button id="addData">Add</button>
+
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <details>
+        <summary style="font-size: x-large">Categories</summary>
+        <table>
+            <tr>
+                <th>Name
+                <th>Rules
+                <th>Public
+        </table>
+    </details>
 </template>
 
 <!-- category item -->
@@ -96,7 +114,32 @@ async function loadHomePage() {
 
     let page = homeTemplate.content.cloneNode(true);
     page.querySelector("h1").innerText = thisUser;
+    page.querySelector("a").setAttribute("href", "#"+thisUser);
 
+    let whenInput = page.querySelector("#inputDate");
+    let valueInput = page.querySelector("#inputText");
+    whenInput.valueAsDate = new Date();
+    let catCombo = page.querySelector("#selectCategory")
+    categories.forEach(c => {
+       let opt = document.createElement("option");
+       opt.setAttribute("value", c.id);
+       opt.innerText = c.name;
+       catCombo.appendChild(opt);
+    });
+    let addButton = page.querySelector("#addData");
+
+    addButton.onclick = async (event) => {
+        let categoryId = parseInt(catCombo.options[catCombo.selectedIndex].value);
+
+        await api("/api/addData", {
+            category_id: categoryId,
+            data: {
+                time: whenInput.valueAsDate.getTime(),
+                value: valueInput.value
+            }
+        });
+        await fragmentChanged();
+    };
 
     for (let i = 0; i < categories.length; i++) {
         let category = categories[i];
@@ -114,14 +157,29 @@ async function loadHomePage() {
         updateButton.innerText = "update";
 
         nameField.onchange = (event) => {
-            if (isValid(nameField)) {
+            if (isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked)) {
                 updateButton.removeAttribute("disabled")
             } else {
                 updateButton.setAttribute("disabled", "disabled");
             }
         };
+        ruleField.onchange = (event) => {
+            if (isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked)) {
+                updateButton.removeAttribute("disabled")
+            } else {
+                updateButton.setAttribute("disabled", "disabled");
+            }
+        };
+        isPublicBox.onchange = (event) => {
+            if (isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked)) {
+                updateButton.removeAttribute("disabled")
+            } else {
+                updateButton.setAttribute("disabled", "disabled");
+            }
+        };
+
         updateButton.onclick = async (event) => {
-            await api("/api/updateCategory", { category_id: category.id, name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked });
+            await api("/api/editCategory", { category_id: category.id, name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked });
             await fragmentChanged();
         }
         removeButton.removeAttribute("disabled");
@@ -148,7 +206,7 @@ async function loadHomePage() {
         }
     };
     newButton.onclick = async (event) => {
-        await api("/api/createCategory", { name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked });
+        await api("/api/addCategory", { name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked });
         await fragmentChanged();
     }
 
@@ -157,7 +215,11 @@ async function loadHomePage() {
     document.body.appendChild(page);
 }
 
-function isValid(nameField, ruleField, publicBox) {
+function isUpdateValid(category, name, rule, checked) {
+    return category.name !== name || category.rules !== rule || category.is_public !== checked;
+}
+
+function isValid(nameField) {
     return nameField.value.length > 0;
 }
 
@@ -197,7 +259,8 @@ function getHeatmap(data, rules) {
 		daysOfYear.push(new Date(d));
 	}
 
-	let max = getMax(data, rules.method);
+    let max = getMax(data, rules.method);
+    let min = getMin(data, rules.method);
 
 	let weekDays = [
 		document.createElement("tr"),
@@ -288,7 +351,7 @@ function getHeatmap(data, rules) {
 		if (dataToday.length > 0) {
 			let value = getValues(dataToday, max, rules.method);
 			console.log(value);
-			inner.style.background = colInterp(colA, colB, value / max);
+			inner.style.background = colInterp(colA, colB, (value - min) / (max - min));
 			weeklySum += value;
 		}
 
@@ -341,27 +404,45 @@ function getValues(data, max, method) {
 	}
 }
 
+function getDayValues(data, method) {
+    let days = new Array(366).fill(null);
+
+    if (method == "sum") {
+        data.forEach(d => {
+            let yearDay = getDayOfYear(new Date(d.time));
+            var value = parseFloat(d.value);
+
+            if(!isNaN(value)) {
+                if (days[yearDay] == null) {
+                    days[yearDay] = 0;
+                }
+                days[yearDay] += value;
+            }
+        });
+    } else {
+        // frequency
+        data.forEach(d => {
+            let yearDay = getDayOfYear(new Date(d.time));
+            if (days[yearDay] == null) {
+                days[yearDay] = 0;
+            }
+            days[yearDay] += 1;
+        });
+    }
+
+    return days;
+}
+
 function getMax(data, method) {
-	let days = new Array(366).fill(0);
+    let days = getDayValues(data, method);
 
-	if (method == "sum") {
-		data.forEach(d => {
-			let yearDay = getDayOfYear(new Date(d.time));
-			var value = parseFloat(d.value);
+	return days.reduce((a, b) => b != null ? Math.max(a, b) : a, -Infinity);
+}
 
-			if(!isNaN(value)) {
-				days[yearDay] += value;
-			}
-		});
-	} else {
-		// frequency
-		data.forEach(d => {
-			let yearDay = getDayOfYear(new Date(d.time));
-			days[yearDay] += 1;
-		});
-	}
+function getMin(data, method) {
+    let days = getDayValues(data, method);
 
-	return days.reduce((a, b) => Math.max(a, b), -Infinity);
+    return days.reduce((a, b) => b != null ? Math.min(a, b) : a, Infinity);
 }
 
 function getDayOfYear(d) {

@@ -54,7 +54,8 @@ fn get_response(db: &mut Connection, req: &mut Request) -> ResponseBox {
             "api/login" => return login(db, req),
             "api/listCategories" => return category::list_categories(db, req),
             "api/addCategory" => return category::add_category(db, req),
-            "api/removeCategory" => {}
+            "api/editCategory" => return category::edit_category(db, req),
+            "api/removeCategory" => return category::remove_category(db, req),
             "api/listData" => return entries::list_data(db, req),
             "api/addData" => return entries::add_data(db, req),
             "api/removeData" => {}
