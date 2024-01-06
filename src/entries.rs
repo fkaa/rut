@@ -1,6 +1,7 @@
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use tiny_http::{Request, Response, ResponseBox};
+use crate::require;
 
 use crate::TelegramParameters;
 
@@ -55,6 +56,8 @@ pub(crate) fn add_data(
     let (user_id, username) = crate::try_auth!(db, req);
     let r: AddDataRequest = crate::try_json!(req);
 
+    require!(r.data.value.len() < 1024);
+
     let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
         return Response::from_string("").with_status_code(400).boxed();
     };
@@ -78,6 +81,7 @@ pub(crate) fn add_data(
     Response::from_string("").with_status_code(200).boxed()
 }
 
+<<<<<<< HEAD
 static BASE_API_URL: &str = "https://api.telegram.org/bot";
 
 fn send_telegram_message(msg: String, params: &TelegramParameters) {
@@ -105,3 +109,59 @@ fn send_telegram_message(msg: String, params: &TelegramParameters) {
         reply_markup: None,
     });
 }
+=======
+#[derive(Deserialize)]
+struct EditDataRequest {
+    category_id: u32,
+    data_id: u32,
+    new_value: String,
+}
+
+pub(crate) fn edit_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
+    let (user_id, _) = crate::try_auth!(db, req);
+    let r: EditDataRequest = crate::try_json!(req);
+
+    require!(r.new_value.len() < 1024);
+
+    let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
+        return Response::from_string("").with_status_code(400).boxed();
+    };
+
+    let rows = db.execute(
+        "UPDATE entries SET value=?3\
+        WHERE category_id=?1 AND id=?2",
+        params![r.category_id, r.data_id, r.new_value]).unwrap();
+
+    if rows == 1 {
+        Response::from_string("{}").with_status_code(200).boxed()
+    } else {
+        Response::from_string("").with_status_code(404).boxed()
+    }
+}
+
+#[derive(Deserialize)]
+struct RemoveDataRequest {
+    category_id: u32,
+    data_id: u32,
+}
+
+pub(crate) fn remove_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
+    let (user_id, _) = crate::try_auth!(db, req);
+    let r: crate::entries::EditDataRequest = crate::try_json!(req);
+
+    let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
+        return Response::from_string("").with_status_code(400).boxed();
+    };
+
+    let rows = db.execute(
+        "DELETE FROM entries \
+        WHERE category_id=?1 AND id=?2",
+        params![r.category_id, r.data_id]).unwrap();
+
+    if rows == 1 {
+        Response::from_string("{}").with_status_code(200).boxed()
+    } else {
+        Response::from_string("").with_status_code(404).boxed()
+    }
+}
+>>>>>>> 02d5b9a (Add limits to strings being added to DB)

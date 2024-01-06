@@ -104,7 +104,8 @@ fn get_response(
             "api/removeCategory" => return category::remove_category(db, req),
             "api/listData" => return entries::list_data(db, req),
             "api/addData" => return entries::add_data(db, req, telegram_params),
-            "api/removeData" => {}
+            "api/editData" => return entries::edit_data(db, req),
+            "api/removeData" => return entries::remove_data(db, req),
             _ => {}
         }
     }

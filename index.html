@@ -50,6 +50,15 @@ transform: translate(-70%, -20%) rotate(-45deg);
                 <th>Public
         </table>
     </details>
+
+    <details>
+        <summary style="font-size: x-large">Settings</summary>
+        <label for="newPassword">New password:</label><input id="newPassword" type="password">
+        <br>
+        <label for="confirmNewPassword">Confirm new password:</label><input id="confirmNewPassword" type="password">
+        <br>
+        <button id="updateAccountSettings">Update</button>
+    </details>
 </template>
 
 <!-- category item -->
@@ -102,40 +111,8 @@ async function getThisUser() {
     }
 }
 
-async function loadHomePage() {
-    let thisUser = await getThisUser()
-    let categories = await api("/api/listCategories", { username: thisUser, include_private: true });
-    categories = categories.categories;
-
-    let page = homeTemplate.content.cloneNode(true);
-    page.querySelector("h1").innerText = thisUser;
-    page.querySelector("a").setAttribute("href", "#"+thisUser);
-
-    let whenInput = page.querySelector("#inputDate");
-    let valueInput = page.querySelector("#inputText");
-    whenInput.valueAsDate = new Date();
-    let catCombo = page.querySelector("#selectCategory")
-    categories.forEach(c => {
-       let opt = document.createElement("option");
-       opt.setAttribute("value", c.id);
-       opt.innerText = c.name;
-       catCombo.appendChild(opt);
-    });
-    let addButton = page.querySelector("#addData");
-
-    addButton.onclick = async (event) => {
-        let categoryId = parseInt(catCombo.options[catCombo.selectedIndex].value);
-
-        await api("/api/addData", {
-            category_id: categoryId,
-            data: {
-                time: whenInput.valueAsDate.getTime(),
-                value: valueInput.value
-            }
-        });
-        await fragmentChanged();
-    };
-
+function buildCategoryUI(categories, page) {
+    let table = page.querySelector("table");
     for (let i = 0; i < categories.length; i++) {
         let category = categories[i];
         let catElement = categoryTemplate.content.cloneNode(true);
@@ -174,16 +151,21 @@ async function loadHomePage() {
         };
 
         updateButton.onclick = async (event) => {
-            await api("/api/editCategory", { category_id: category.id, name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked });
+            await api("/api/editCategory", {
+                category_id: category.id,
+                name: nameField.value,
+                rules: ruleField.value,
+                is_public: isPublicBox.checked
+            });
             await fragmentChanged();
         }
         removeButton.removeAttribute("disabled");
         removeButton.onclick = async (event) => {
-            await api("/api/removeCategory", { category_id: category.id });
+            await api("/api/removeCategory", {category_id: category.id});
             await fragmentChanged();
         }
 
-        page.querySelector("table").appendChild(catElement);
+        table.appendChild(catElement);
     }
 
     let catElement = categoryTemplate.content.cloneNode(true);
@@ -201,9 +183,47 @@ async function loadHomePage() {
         }
     };
     newButton.onclick = async (event) => {
-        await api("/api/addCategory", { name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked });
+        await api("/api/addCategory", {name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked});
         await fragmentChanged();
     }
+    return catElement;
+}
+
+async function loadHomePage() {
+    let thisUser = await getThisUser()
+    let categories = await api("/api/listCategories", { username: thisUser, include_private: true });
+    categories = categories.categories;
+
+    let page = homeTemplate.content.cloneNode(true);
+    page.querySelector("h1").innerText = thisUser;
+    page.querySelector("a").setAttribute("href", "#"+thisUser);
+
+    let whenInput = page.querySelector("#inputDate");
+    let valueInput = page.querySelector("#inputText");
+    whenInput.valueAsDate = new Date();
+    let catCombo = page.querySelector("#selectCategory")
+    categories.forEach(c => {
+       let opt = document.createElement("option");
+       opt.setAttribute("value", c.id);
+       opt.innerText = c.name;
+       catCombo.appendChild(opt);
+    });
+    let addButton = page.querySelector("#addData");
+
+    addButton.onclick = async (event) => {
+        let categoryId = parseInt(catCombo.options[catCombo.selectedIndex].value);
+
+        await api("/api/addData", {
+            category_id: categoryId,
+            data: {
+                time: whenInput.valueAsDate.getTime(),
+                value: valueInput.value
+            }
+        });
+        await fragmentChanged();
+    };
+
+    let catElement = buildCategoryUI(categories, page);
 
     page.querySelector("table").appendChild(catElement);
 
@@ -376,7 +396,7 @@ function getHeatmap(data, rules) {
 		weekDays[weekDay].appendChild(dayData);
 		let m = d.getMonth();
 
-		if (m != prevMonth) {
+		if (m !== prevMonth) {
 			prevMonth = m;
 			let col = weekDays[weekDay].children.length - 1;
 			monthHeaders.cells[col - (m * 2)].innerText = MONTHS[m];

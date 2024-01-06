@@ -31,6 +31,15 @@ macro_rules! try_json {
 }
 
 #[macro_export]
+macro_rules! require {
+    ($val:expr) => {
+        if !$val {
+            return Response::from_string(stringify!($val)).with_status_code(400).boxed();
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! try_unwrap {
     ($obj:expr) => {{
         match $obj {
