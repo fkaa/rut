@@ -129,25 +129,13 @@ function buildCategoryUI(categories, page) {
         updateButton.innerText = "update";
 
         nameField.onchange = (event) => {
-            if (isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked)) {
-                updateButton.removeAttribute("disabled")
-            } else {
-                updateButton.setAttribute("disabled", "disabled");
-            }
+            setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
         };
         ruleField.onchange = (event) => {
-            if (isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked)) {
-                updateButton.removeAttribute("disabled")
-            } else {
-                updateButton.setAttribute("disabled", "disabled");
-            }
+            setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
         };
         isPublicBox.onchange = (event) => {
-            if (isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked)) {
-                updateButton.removeAttribute("disabled")
-            } else {
-                updateButton.setAttribute("disabled", "disabled");
-            }
+            setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
         };
 
         updateButton.onclick = async (event) => {
@@ -176,17 +164,14 @@ function buildCategoryUI(categories, page) {
     let newButton = catElement.querySelector("#newUpdate");
     newButton.innerText = "new";
     nameField.onchange = (event) => {
-        if (isValid(nameField)) {
-            newButton.removeAttribute("disabled")
-        } else {
-            newButton.setAttribute("disabled", "disabled");
-        }
+        setEnabled(newButton, isValid(nameField));
     };
     newButton.onclick = async (event) => {
         await api("/api/addCategory", {name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked});
         await fragmentChanged();
     }
-    return catElement;
+
+    table.appendChild(catElement);
 }
 
 async function loadHomePage() {
@@ -221,11 +206,27 @@ async function loadHomePage() {
             }
         });
         await fragmentChanged();
+        alert("Data added");
     };
 
-    let catElement = buildCategoryUI(categories, page);
+    buildCategoryUI(categories, page);
 
-    page.querySelector("table").appendChild(catElement);
+    let newPassword = page.querySelector("#newPassword");
+    let confirmNewPassword = page.querySelector("#confirmNewPassword");
+    let updatePassword = page.querySelector("#updateAccountSettings");
+    confirmNewPassword.onchange = (event) => {
+        setEnabled(updatePassword, newPassword.value.length > 0 && newPassword.value === confirmNewPassword.value);
+    };
+
+    updatePassword.onclick = async (event) => {
+        if (newPassword.value !== confirmNewPassword.value) {
+            return;
+        }
+
+        await api("/api/updatePassword", {new_password: newPassword.value });
+        await fragmentChanged();
+        alert("Password changed");
+    }
 
     document.body.appendChild(page);
 }
@@ -543,6 +544,14 @@ function colInterp(ca, cb, percent) {
 	const b = Math.round(b1 + (b2 - b1) * percent);
 
 	return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+function setEnabled(element, enabled) {
+    if (enabled) {
+        element.removeAttribute("disabled");
+    } else {
+        element.setAttribute("disabled", "disabled");
+    }
 }
 
 function parseRules(rules) {

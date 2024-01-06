@@ -1,7 +1,7 @@
 use std::{env, fs};
 
 use log::{debug, info};
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension, params_from_iter};
 use rusqlite_migration::{Migrations, M};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -99,6 +99,7 @@ fn get_response(
     if let Some((_, path)) = url.split_once("/") {
         match path {
             "api/login" => return login(db, req),
+            "api/updatePassword" => return update_password(db, req),
             "api/listCategories" => return category::list_categories(db, req),
             "api/addCategory" => return category::add_category(db, req),
             "api/editCategory" => return category::edit_category(db, req),
@@ -125,4 +126,26 @@ fn login(db: &mut Connection, req: &mut Request) -> ResponseBox {
     }
 
     to_json!(&LoginResponse { user })
+}
+
+#[derive(Deserialize)]
+struct ChangePasswordRequest {
+    new_password: String,
+}
+
+fn update_password(db: &mut Connection, req: &mut Request) -> ResponseBox {
+    let (id, user) = try_auth!(db, req);
+    let r: ChangePasswordRequest = try_json!(req);
+
+    require!(r.new_password.len() > 0);
+    require!(r.new_password.len() < 1000);
+
+    let mut hasher = Sha256::new();
+    hasher.update(r.new_password.as_bytes());
+    let hashed_pass = hasher.finalize();
+    let base64_pass = base64::encode(hashed_pass);
+
+    db.execute("UPDATE users SET password=?1 WHERE id=?2", params![base64_pass, id]).unwrap();
+
+    Response::from_string("{}").with_status_code(200).boxed()
 }

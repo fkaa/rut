@@ -83,7 +83,7 @@ pub(crate) fn add_data(
         }
     }
 
-    Response::from_string("").with_status_code(200).boxed()
+    Response::from_string("{}").with_status_code(200).boxed()
 }
 
 static BASE_API_URL: &str = "https://api.telegram.org/bot";
