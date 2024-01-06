@@ -16,6 +16,11 @@ mod entries;
 
 const MIGRATIONS: [M; 1] = [M::up(include_str!("../migrations/0001_initial.sql"))];
 
+pub struct TelegramParameters {
+    pub telegram_token: String,
+    pub telegram_chat: i64,
+}
+
 fn main() {
     env_logger::init();
 
@@ -39,7 +44,11 @@ fn main() {
             let hashed_pass = hasher.finalize();
             let base64_pass = base64::encode(hashed_pass);
 
-            db.execute("INSERT INTO users (username, password) VALUES (?1, ?2)", params![user, base64_pass]).unwrap();
+            db.execute(
+                "INSERT INTO users (username, password) VALUES (?1, ?2)",
+                params![user, base64_pass],
+            )
+            .unwrap();
 
             log::info!("Added new user '{user}'")
         }
@@ -47,11 +56,22 @@ fn main() {
         return;
     }
 
+    let telegram_params = if let (Ok(telegram_token), Ok(telegram_chat)) =
+        (env::var("TELEGRAM_TOKEN"), env::var("TELEGRAM_CHAT"))
+    {
+        Some(TelegramParameters {
+            telegram_token,
+            telegram_chat: telegram_chat.parse().unwrap(),
+        })
+    } else {
+        None
+    };
+
     let server = tiny_http::Server::http("127.0.0.1:8000").unwrap();
 
     info!("Listening for HTTP requests...");
     for mut req in server.incoming_requests() {
-        let response = get_response(&mut db, &mut req);
+        let response = get_response(&mut db, &mut req, telegram_params.as_ref());
 
         debug!(
             "{} {} => {}",
@@ -64,7 +84,11 @@ fn main() {
     }
 }
 
-fn get_response(db: &mut Connection, req: &mut Request) -> ResponseBox {
+fn get_response(
+    db: &mut Connection,
+    req: &mut Request,
+    telegram_params: Option<&TelegramParameters>,
+) -> ResponseBox {
     let url = req.url();
     if url.ends_with("/") || url.ends_with("/index.html") {
         let content = fs::read("index.html").unwrap();
@@ -79,7 +103,7 @@ fn get_response(db: &mut Connection, req: &mut Request) -> ResponseBox {
             "api/editCategory" => return category::edit_category(db, req),
             "api/removeCategory" => return category::remove_category(db, req),
             "api/listData" => return entries::list_data(db, req),
-            "api/addData" => return entries::add_data(db, req),
+            "api/addData" => return entries::add_data(db, req, telegram_params),
             "api/removeData" => {}
             _ => {}
         }
@@ -100,5 +124,3 @@ fn login(db: &mut Connection, req: &mut Request) -> ResponseBox {
 
     to_json!(&LoginResponse { user })
 }
-
-
