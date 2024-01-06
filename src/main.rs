@@ -16,6 +16,7 @@ mod entries;
 
 const MIGRATIONS: [M; 1] = [M::up(include_str!("../migrations/0001_initial.sql"))];
 
+#[derive(Clone)]
 pub struct TelegramParameters {
     pub telegram_token: String,
     pub telegram_chat: i64,

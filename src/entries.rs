@@ -1,3 +1,4 @@
+use std::thread;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use tiny_http::{Request, Response, ResponseBox};
@@ -71,17 +72,20 @@ pub(crate) fn add_data(
 
     if let Some(params) = telegram_params {
         if cat.is_public && cat.rules.contains("telegram=yes") {
-            send_telegram_message(
-                format!("{} added '{}' to {}", username, r.data.value, cat.name),
-                params,
-            );
+            let params = params.clone();
+
+            thread::spawn(move || {
+                send_telegram_message(
+                    format!("{} added '{}' to {}", username, r.data.value, cat.name),
+                    &params,
+                );
+            });
         }
     }
 
     Response::from_string("").with_status_code(200).boxed()
 }
 
-<<<<<<< HEAD
 static BASE_API_URL: &str = "https://api.telegram.org/bot";
 
 fn send_telegram_message(msg: String, params: &TelegramParameters) {
@@ -109,7 +113,7 @@ fn send_telegram_message(msg: String, params: &TelegramParameters) {
         reply_markup: None,
     });
 }
-=======
+
 #[derive(Deserialize)]
 struct EditDataRequest {
     category_id: u32,
@@ -164,4 +168,3 @@ pub(crate) fn remove_data(db: &mut Connection, req: &mut Request) -> ResponseBox
         Response::from_string("").with_status_code(404).boxed()
     }
 }
->>>>>>> 02d5b9a (Add limits to strings being added to DB)
