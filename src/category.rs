@@ -1,5 +1,5 @@
 use crate::require;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tiny_http::{Request, Response, ResponseBox};
 
@@ -147,7 +147,9 @@ pub(crate) fn get_category(
             }))
         },
     )
-    .unwrap()
+        .optional()
+        .unwrap()
+        .and_then(|o| o)
 }
 
 #[derive(Deserialize)]
