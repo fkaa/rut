@@ -1,7 +1,7 @@
 use std::{env, fs};
 
 use log::{debug, info};
-use rusqlite::{params, Connection, OptionalExtension, params_from_iter};
+use rusqlite::{params, params_from_iter, Connection, OptionalExtension};
 use rusqlite_migration::{Migrations, M};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -145,7 +145,11 @@ fn update_password(db: &mut Connection, req: &mut Request) -> ResponseBox {
     let hashed_pass = hasher.finalize();
     let base64_pass = base64::encode(hashed_pass);
 
-    db.execute("UPDATE users SET password=?1 WHERE id=?2", params![base64_pass, id]).unwrap();
+    db.execute(
+        "UPDATE users SET password=?1 WHERE id=?2",
+        params![base64_pass, id],
+    )
+    .unwrap();
 
     Response::from_string("{}").with_status_code(200).boxed()
 }

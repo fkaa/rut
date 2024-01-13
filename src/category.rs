@@ -1,7 +1,7 @@
-use rusqlite::{Connection, params};
+use crate::require;
+use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use tiny_http::{Request, Response, ResponseBox};
-use crate::require;
 
 #[derive(Deserialize)]
 struct ListCategoriesRequest {
@@ -20,7 +20,7 @@ pub struct Category {
     pub user_id: u32,
     pub rules: String,
     pub name: String,
-    pub is_public: bool
+    pub is_public: bool,
 }
 
 pub(crate) fn list_categories(db: &mut Connection, req: &mut Request) -> ResponseBox {
@@ -59,7 +59,7 @@ pub(crate) fn list_categories(db: &mut Connection, req: &mut Request) -> Respons
                     user_id,
                     rules,
                     name,
-                    is_public
+                    is_public,
                 }))
             }
         })
@@ -89,7 +89,9 @@ pub(crate) fn add_category(db: &mut Connection, req: &mut Request) -> ResponseBo
     db.execute(
         "INSERT INTO categories (user_id, name, rules, is_public)\
         VALUES (?1, ?2, ?3, ?4)",
-        params![user_id, r.name, r.rules, if r.is_public { 1 } else { 0 }]).unwrap();
+        params![user_id, r.name, r.rules, if r.is_public { 1 } else { 0 }],
+    )
+    .unwrap();
 
     Response::from_string("{}").with_status_code(200).boxed()
 }
@@ -106,16 +108,25 @@ pub(crate) fn remove_category(db: &mut Connection, req: &mut Request) -> Respons
     db.execute(
         "DELETE FROM categories \
         WHERE id = ?1 AND user_id = ?2",
-        params![r.category_id, user_id]).unwrap();
+        params![r.category_id, user_id],
+    )
+    .unwrap();
 
     Response::from_string("{}").with_status_code(200).boxed()
 }
 
-pub(crate) fn get_category(db: &Connection, category_id: u32, user_id: u32, authed: bool) -> Option<Category> {
+pub(crate) fn get_category(
+    db: &Connection,
+    category_id: u32,
+    user_id: u32,
+    authed: bool,
+) -> Option<Category> {
     db.query_row(
         "SELECT c.id, c.user_id, c.rules, c.name, c.is_public, c.user_id FROM categories c \
         INNER JOIN users u ON c.user_id = u.id
-        WHERE c.id == ?1 AND c.user_id = ?2", params![category_id, user_id], |row| {
+        WHERE c.id == ?1 AND c.user_id = ?2",
+        params![category_id, user_id],
+        |row| {
             let id = row.get::<_, u32>(0).unwrap();
             let category_user_id = row.get::<_, u32>(1).unwrap();
             let rules = row.get::<_, String>(2).unwrap();
@@ -135,7 +146,8 @@ pub(crate) fn get_category(db: &Connection, category_id: u32, user_id: u32, auth
                 is_public,
             }))
         },
-    ).unwrap()
+    )
+    .unwrap()
 }
 
 #[derive(Deserialize)]
@@ -160,7 +172,14 @@ pub(crate) fn edit_category(db: &mut Connection, req: &mut Request) -> ResponseB
     db.execute(
         "UPDATE categories SET name=?1, rules=?2, is_public=?3\
         WHERE id=?4",
-        params![r.name, r.rules, &if r.is_public { 1 } else { 0 }, r.category_id]).unwrap();
+        params![
+            r.name,
+            r.rules,
+            &if r.is_public { 1 } else { 0 },
+            r.category_id
+        ],
+    )
+    .unwrap();
 
     Response::from_string("{}").with_status_code(200).boxed()
 }

@@ -1,8 +1,8 @@
-use std::thread;
+use crate::require;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
+use std::thread;
 use tiny_http::{Request, Response, ResponseBox};
-use crate::require;
 
 use crate::TelegramParameters;
 
@@ -138,10 +138,13 @@ pub(crate) fn edit_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
         return Response::from_string("").with_status_code(400).boxed();
     };
 
-    let rows = db.execute(
-        "UPDATE entries SET value=?3\
+    let rows = db
+        .execute(
+            "UPDATE entries SET value=?3\
         WHERE category_id=?1 AND id=?2",
-        params![r.category_id, r.data_id, r.new_value]).unwrap();
+            params![r.category_id, r.data_id, r.new_value],
+        )
+        .unwrap();
 
     if rows == 1 {
         Response::from_string("{}").with_status_code(200).boxed()
@@ -164,10 +167,13 @@ pub(crate) fn remove_data(db: &mut Connection, req: &mut Request) -> ResponseBox
         return Response::from_string("").with_status_code(400).boxed();
     };
 
-    let rows = db.execute(
-        "DELETE FROM entries \
+    let rows = db
+        .execute(
+            "DELETE FROM entries \
         WHERE category_id=?1 AND id=?2",
-        params![r.category_id, r.data_id]).unwrap();
+            params![r.category_id, r.data_id],
+        )
+        .unwrap();
 
     if rows == 1 {
         Response::from_string("{}").with_status_code(200).boxed()

@@ -34,7 +34,9 @@ macro_rules! try_json {
 macro_rules! require {
     ($val:expr) => {
         if !$val {
-            return Response::from_string(stringify!($val)).with_status_code(400).boxed();
+            return Response::from_string(stringify!($val))
+                .with_status_code(400)
+                .boxed();
         }
     };
 }
@@ -54,7 +56,11 @@ macro_rules! try_unwrap {
 }
 
 pub fn get_auth(req: &Request) -> Option<(String, String)> {
-    let Some(header) = req.headers().iter().find(|h| h.field == "Authorization".parse().unwrap()) else {
+    let Some(header) = req
+        .headers()
+        .iter()
+        .find(|h| h.field == "Authorization".parse().unwrap())
+    else {
         log::warn!("No auth header found");
         return None;
     };
@@ -84,8 +90,8 @@ pub fn get_auth(req: &Request) -> Option<(String, String)> {
 #[macro_export]
 macro_rules! try_auth {
     ($db:expr, $req:expr) => {{
-        use sha2::{Digest, Sha256};
         use rusqlite::OptionalExtension;
+        use sha2::{Digest, Sha256};
 
         let Some((user, pass)) = crate::macros::get_auth($req) else {
             return Response::from_string("")
