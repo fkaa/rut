@@ -53,7 +53,13 @@ pub(crate) fn list_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
 #[derive(Deserialize)]
 struct AddDataRequest {
     category_id: u32,
-    data: Data,
+    data: AddData,
+}
+
+#[derive(Deserialize, Serialize)]
+struct AddData {
+    time: u64,
+    value: String,
 }
 
 pub(crate) fn add_data(
