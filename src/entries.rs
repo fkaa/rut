@@ -18,22 +18,29 @@ struct ListDataResponse {
 
 #[derive(Deserialize, Serialize)]
 struct Data {
+    id: u32,
     time: u64,
     value: String,
 }
 
 pub(crate) fn list_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
+    let (user_id, username) = crate::try_auth!(db, req);
     let r: ListDataRequest = crate::try_json!(req);
 
+    let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
+        return Response::from_string("").with_status_code(400).boxed();
+    };
+
     let mut stmt = db
-        .prepare("SELECT e.time, e.value FROM entries e WHERE e.category_id = ?1")
+        .prepare("SELECT e.id, e.time, e.value FROM entries e WHERE e.category_id = ?1")
         .unwrap();
 
     let data = stmt
         .query_map(params![&r.category_id], |row| {
             Ok(Data {
-                time: row.get::<_, u64>(0).unwrap(),
-                value: row.get::<_, String>(1).unwrap(),
+                id: row.get::<_, u32>(0).unwrap(),
+                time: row.get::<_, u64>(1).unwrap(),
+                value: row.get::<_, String>(2).unwrap(),
             })
         })
         .unwrap()
@@ -151,7 +158,7 @@ struct RemoveDataRequest {
 
 pub(crate) fn remove_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
     let (user_id, _) = crate::try_auth!(db, req);
-    let r: crate::entries::EditDataRequest = crate::try_json!(req);
+    let r: crate::entries::RemoveDataRequest = crate::try_json!(req);
 
     let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
         return Response::from_string("").with_status_code(400).boxed();

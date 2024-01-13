@@ -2,23 +2,22 @@
 <title>rut</title>
 <link rel="shortcut icon" href="/favicon.png">
 <style>
-body {font-size: small;}
-table, th, tr, td {border-collapse:collapse;}
-.months th {text-align:left;}
+body { font-size: small; }
+table, th, tr, td { border-collapse:collapse; }
+.months th { text-align:left; }
 .box {
-margin: 1px;
-width:1em;
-height:1em;
-background-color: whitesmoke;}
-.today {
-outline: 2px dotted black;}
-.hilite {
-outline: 2px solid lightgray;}
+    margin: 1px;
+    width:1em;
+    height:1em;
+    background-color: whitesmoke;
+}
+.today { outline: 2px dotted black;}
+.hilite { outline: 2px solid lightgray;}
 .sumText {
-color:gray;
-position: absolute;
-		  transform-origin: top right;
-transform: translate(-70%, -20%) rotate(-45deg);
+    color:gray;
+    position: absolute;
+    transform-origin: top right;
+    transform: translate(-70%, -20%) rotate(-45deg);
 }
 </style>
 
@@ -38,6 +37,7 @@ transform: translate(-70%, -20%) rotate(-45deg);
 
     <br>
     <br>
+    <a href="#edit">Edit category data</a>
     <br>
     <br>
 
@@ -59,6 +59,30 @@ transform: translate(-70%, -20%) rotate(-45deg);
         <br>
         <button id="updateAccountSettings">Update</button>
     </details>
+</template>
+
+<template id="editTemplate">
+    <a><h1>name</h1></a>
+
+    <label for="categories">Category</label><select id="categories"></select>
+    <br>
+
+    <table>
+        <tr>
+            <th>Value
+            <th>Added
+            <th>
+            <th>
+    </table>
+</template>
+
+<!-- data item -->
+<template id="dataTemplate">
+    <tr>
+        <td><label for="value"></label><input id="value" type="text">
+        <td><label for="dataDate"></label><input id="dataDate" type="datetime-local" disabled>
+        <td><button id="dataUpdate" disabled>update</button>
+        <td><button id="dataRemove">remove</button>
 </template>
 
 <!-- category item -->
@@ -92,6 +116,11 @@ async function fragmentChanged() {
         case "#":
             console.log("Loading home page");
             await loadHomePage();
+            break;
+
+        case "#edit":
+            console.log("Loading edit page");
+            await loadEditPage();
             break;
 
         default:
@@ -174,6 +203,85 @@ function buildCategoryUI(categories, page) {
     table.appendChild(catElement);
 }
 
+async function loadEditPage() {
+    let thisUser = await getThisUser()
+    let categories = await api("/api/listCategories", { username: thisUser, include_private: true });
+    categories = categories.categories;
+
+    let page = editTemplate.content.cloneNode(true);
+    page.querySelector("h1").innerText = thisUser;
+    page.querySelector("a").setAttribute("href", "#"+thisUser);
+
+    let table = page.querySelector("table");
+    let catCombo = page.querySelector("#categories")
+    categories.forEach(c => {
+        let opt = document.createElement("option");
+        opt.setAttribute("value", c.id);
+        opt.innerText = c.name;
+        catCombo.appendChild(opt);
+    });
+    catCombo.onchange = async e => {
+        let categoryId = parseInt(catCombo.options[catCombo.selectedIndex].value);
+
+        await populateDataTable(thisUser, table, categoryId)
+    };
+
+    if (categories.length > 0) {
+        await populateDataTable(thisUser, table, categories[0].id)
+    }
+
+    document.body.appendChild(page);
+}
+
+async function populateDataTable(user, table, categoryId) {
+    let data = await api("/api/listData", { category_id: categoryId });
+    data = data.data;
+
+    while (table.rows.length >= 2) {
+        table.deleteRow(-1);
+    }
+
+    let i = 1;
+    data.forEach(d => {
+        let dataElement = dataTemplate.content.cloneNode(true);
+
+        let valueField = dataElement.querySelector("#value");
+        let dateField = dataElement.querySelector("#dataDate");
+        let updateButton = dataElement.querySelector("#dataUpdate");
+        let removeButton = dataElement.querySelector("#dataRemove");
+
+        valueField.value = d.value;
+        dateField.valueAsDate = new Date(d.time);
+
+        valueField.onchange = (event) => {
+            setEnabled(updateButton, isDataUpdateValid(d, valueField.value));
+        };
+        updateButton.onclick = async e => {
+            await api("/api/editData", {
+                category_id: categoryId,
+                data_id: d.id,
+                new_value: valueField.value
+            });
+            alert("Data edited");
+            d.value = valueField.value;
+            setEnabled(updateButton, false);
+        };
+        let idx = i;
+        removeButton.onclick = async e => {
+            await api("/api/removeData", {
+                category_id: categoryId,
+                data_id: d.id
+            });
+            alert("Data removed");
+            table.deleteRow(idx);
+        };
+
+        i++;
+
+        table.appendChild(dataElement);
+    });
+}
+
 async function loadHomePage() {
     let thisUser = await getThisUser()
     let categories = await api("/api/listCategories", { username: thisUser, include_private: true });
@@ -233,6 +341,10 @@ async function loadHomePage() {
 
 function isUpdateValid(category, name, rule, checked) {
     return category.name !== name || category.rules !== rule || category.is_public !== checked;
+}
+
+function isDataUpdateValid(data, value) {
+    return data.value !== value;
 }
 
 function isValid(nameField) {
@@ -565,6 +677,32 @@ function parseRules(rules) {
 	});
 
 	return dict;
+}
+
+function timeSince(date) {
+    var seconds = Math.floor((new Date() - date) / 1000);
+    var interval = seconds / 31536000;
+
+    if (interval > 1) {
+        return Math.floor(interval) + " years";
+    }
+    interval = seconds / 2592000;
+    if (interval > 1) {
+        return Math.floor(interval) + " months";
+    }
+    interval = seconds / 86400;
+    if (interval > 1) {
+        return Math.floor(interval) + " days";
+    }
+    interval = seconds / 3600;
+    if (interval > 1) {
+        return Math.floor(interval) + " hours";
+    }
+    interval = seconds / 60;
+    if (interval > 1) {
+        return Math.floor(interval) + " minutes";
+    }
+    return Math.floor(seconds) + " seconds";
 }
 
 function api(url, data) {
