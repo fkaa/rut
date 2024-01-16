@@ -24,12 +24,18 @@ struct Data {
 }
 
 pub(crate) fn list_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
-    let (user_id, username) = crate::try_auth!(db, req);
     let r: ListDataRequest = crate::try_json!(req);
 
-    let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
-        return Response::from_string("").with_status_code(400).boxed();
+    let Some(cat) = crate::category::get_category(db, r.category_id) else {
+        return Response::from_string("").with_status_code(404).boxed();
     };
+
+    if !cat.is_public {
+        let (user_id, username) = crate::try_auth!(db, req);
+        if cat.user_id != user_id {
+            return Response::from_string("").with_status_code(403).boxed();
+        }
+    }
 
     let mut stmt = db
         .prepare("SELECT e.id, e.time, e.value FROM entries e WHERE e.category_id = ?1")
@@ -72,9 +78,13 @@ pub(crate) fn add_data(
 
     require!(r.data.value.len() < 1024);
 
-    let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
+    let Some(cat) = crate::category::get_category(db, r.category_id) else {
         return Response::from_string("").with_status_code(400).boxed();
     };
+
+    if cat.user_id != user_id {
+        return Response::from_string("").with_status_code(403).boxed();
+    }
 
     db.execute(
         "INSERT INTO entries (category_id, time, value)\
@@ -140,9 +150,13 @@ pub(crate) fn edit_data(db: &mut Connection, req: &mut Request) -> ResponseBox {
 
     require!(r.new_value.len() < 1024);
 
-    let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
+    let Some(cat) = crate::category::get_category(db, r.category_id) else {
         return Response::from_string("").with_status_code(400).boxed();
     };
+
+    if cat.user_id != user_id {
+        return Response::from_string("").with_status_code(403).boxed();
+    }
 
     let rows = db
         .execute(
@@ -169,9 +183,13 @@ pub(crate) fn remove_data(db: &mut Connection, req: &mut Request) -> ResponseBox
     let (user_id, _) = crate::try_auth!(db, req);
     let r: crate::entries::RemoveDataRequest = crate::try_json!(req);
 
-    let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
+    let Some(cat) = crate::category::get_category(db, r.category_id) else {
         return Response::from_string("").with_status_code(400).boxed();
     };
+
+    if cat.user_id != user_id {
+        return Response::from_string("").with_status_code(403).boxed();
+    }
 
     let rows = db
         .execute(

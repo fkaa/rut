@@ -118,29 +118,22 @@ pub(crate) fn remove_category(db: &mut Connection, req: &mut Request) -> Respons
 pub(crate) fn get_category(
     db: &Connection,
     category_id: u32,
-    user_id: u32,
-    authed: bool,
 ) -> Option<Category> {
     db.query_row(
         "SELECT c.id, c.user_id, c.rules, c.name, c.is_public, c.user_id FROM categories c \
         INNER JOIN users u ON c.user_id = u.id
-        WHERE c.id == ?1 AND c.user_id = ?2",
-        params![category_id, user_id],
+        WHERE c.id == ?1",
+        params![category_id],
         |row| {
             let id = row.get::<_, u32>(0).unwrap();
             let category_user_id = row.get::<_, u32>(1).unwrap();
             let rules = row.get::<_, String>(2).unwrap();
             let name = row.get::<_, String>(3).unwrap();
             let is_public = row.get::<_, u32>(4).unwrap() == 1;
-            let is_owner = category_user_id == user_id && authed;
-
-            if !is_public && !is_owner {
-                return Ok(None);
-            }
 
             Ok(Some(Category {
                 id,
-                user_id,
+                user_id: category_user_id,
                 rules,
                 name,
                 is_public,
@@ -167,9 +160,14 @@ pub(crate) fn edit_category(db: &mut Connection, req: &mut Request) -> ResponseB
     require!(r.name.len() < 1024);
     require!(r.rules.len() < 1024);
 
-    let Some(cat) = crate::category::get_category(db, r.category_id, user_id, true) else {
+    let Some(cat) = crate::category::get_category(db, r.category_id) else {
         return Response::from_string("").with_status_code(400).boxed();
     };
+
+    if cat.user_id != user_id {
+        return Response::from_string("").with_status_code(403).boxed();
+    }
+
 
     db.execute(
         "UPDATE categories SET name=?1, rules=?2, is_public=?3\
