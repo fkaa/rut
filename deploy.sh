@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -Eeuo pipefail
-set -x
+set -v
 
 cargo build --target armv7-unknown-linux-musleabihf
 sshpass -p "$PASS" ssh -t root@odroid 'systemctl stop rut'
