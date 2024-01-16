@@ -96,6 +96,10 @@ fn get_response(
         return Response::from_data(content).with_status_code(200).boxed();
     }
 
+    if url.ends_with("favicon.ico") {
+        return Response::from_data(include_bytes!("../favicon.ico")).with_status_code(200).boxed();
+    }
+
     if let Some((_, path)) = url.split_once("/") {
         match path {
             "api/login" => return login(db, req),
