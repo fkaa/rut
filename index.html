@@ -505,6 +505,9 @@ function getHeatmap(data, rules) {
 		if (rules.pizza != null) {
 			inner.style.backgroundImage = 'url("https://assets.axfood.se/image/upload/f_auto,t_500/04001724039112_C1L1_s02")';
 			inner.style.backgroundSize = 'cover';
+			if (value < 1.0) {
+	inner.style.width = `${value}em`;
+}
 		} else {
 			inner.style.background = colInterp(colA, colB, max === min ? 0 : (value - min) / (max - min));
 		}
