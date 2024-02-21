@@ -1,189 +1,238 @@
-<!DOCTYPE html>
+<!doctype html>
 <title>rut</title>
-<link rel="shortcut icon" href="/favicon.ico">
-<link rel="icon" href="/favicon.ico">
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="icon" href="/favicon.ico" />
 <style>
-body { font-size: small; }
-table, th, tr, td { border-collapse:collapse; }
-.months th { text-align:left; }
-.box {
+  body {
+    font-size: small;
+  }
+  table,
+  th,
+  tr,
+  td {
+    border-collapse: collapse;
+  }
+  .months th {
+    text-align: left;
+  }
+  .box {
     margin: 1px;
-    width:1em;
-    height:1em;
+    width: 1em;
+    height: 1em;
     background-color: whitesmoke;
-}
-.today { outline: 2px dotted black;}
-.hilite { outline: 2px solid lightgray;}
-.sumText {
-    color:gray;
+  }
+  .today {
+    outline: 2px dotted black;
+  }
+  .hilite {
+    outline: 2px solid lightgray;
+  }
+  .sumText {
+    color: gray;
     position: absolute;
     transform-origin: top right;
     transform: translate(-70%, -20%) rotate(-45deg);
-}
+  }
 </style>
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta charset="utf-8" />
 
 <template id="homeTemplate">
-    <a><h1>name</h1></a>
+  <a><h1>name</h1></a>
 
-    <label for="selectCategory">Category</label><select id="selectCategory"></select>
-    <br>
-    <label for="inputDate">When</label><input id="inputDate" type="date">
-    <br>
-    <label for="inputText">Value</label><input id="inputText" type="text">
-    <br>
-    <button id="addData">Add</button>
+  <label for="selectCategory">Category</label
+  ><select id="selectCategory"></select>
+  <br />
+  <label for="inputDate">When</label><input id="inputDate" type="date" />
+  <br />
+  <label for="inputText">Value</label><input id="inputText" type="text" />
+  <br />
+  <button id="addData">Add</button>
 
-    <br>
-    <br>
-    <a href="#edit">Edit category data</a>
-    <br>
-    <br>
+  <br />
+  <br />
+  <a href="#edit">Edit category data</a>
+  <br />
+  <br />
 
-    <details>
-        <summary style="font-size: x-large">Categories</summary>
-        <table>
-            <tr>
-                <th>Name
-                <th>Rules
-                <th>Public
-        </table>
-    </details>
+  <details>
+    <summary style="font-size: x-large">Categories</summary>
+    <table>
+      <tr>
+        <th>Name</th>
+        <th>Rules</th>
+        <th>Public</th>
+      </tr>
+    </table>
+  </details>
 
-    <details>
-        <summary style="font-size: x-large">Settings</summary>
-        <label for="newPassword">New password:</label><input id="newPassword" type="password">
-        <br>
-        <label for="confirmNewPassword">Confirm new password:</label><input id="confirmNewPassword" type="password">
-        <br>
-        <button id="updateAccountSettings">Update</button>
-    </details>
+  <details>
+    <summary style="font-size: x-large">Settings</summary>
+    <label for="newPassword">New password:</label
+    ><input id="newPassword" type="password" />
+    <br />
+    <label for="confirmNewPassword">Confirm new password:</label
+    ><input id="confirmNewPassword" type="password" />
+    <br />
+    <button id="updateAccountSettings">Update</button>
+  </details>
 </template>
 
 <template id="editTemplate">
-    <a><h1>name</h1></a>
+  <a><h1>name</h1></a>
 
-    <label for="categories">Category</label><select id="categories"></select>
-    <br>
+  <label for="categories">Category</label
+  ><select id="categories"></select>
+  <br />
 
-    <table>
-        <tr>
-            <th>Value
-            <th>Added
-            <th>
-            <th>
-    </table>
+  <table>
+    <tr>
+      <th>Value</th>
+      <th>Added</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </table>
 </template>
 
 <!-- data item -->
 <template id="dataTemplate">
-    <tr>
-        <td><label for="value"></label><input id="value" type="text">
-        <td><label for="dataDate"></label><input id="dataDate" type="date" disabled>
-        <td><button id="dataUpdate" disabled>update</button>
-        <td><button id="dataRemove">remove</button>
-</template>
+  <tr>
+    <td><label for="value"></label><input id="value" type="text" /></td>
+    <td>
+      <label for="dataDate"></label><input id="dataDate" type="date" disabled />
+    </td>
+    <td><button id="dataUpdate" disabled>update</button></td>
+    <td><button id="dataRemove">remove</button></td>
+  </tr></template
+>
 
 <!-- category item -->
 <template id="categoryTemplate">
-<tr>
-<td><label for="name"></label><input id="name" type="text">
-<td><label for="rules"></label><input id="rules" type="text">
-<td><label for="isPublic">is public?</label><input id="isPublic" type="checkbox">
-<td><button id="newUpdate" disabled></button>
-<td><button id="remove" disabled>remove</button>
-</template>
+  <tr>
+    <td><label for="name"></label><input id="name" type="text" /></td>
+    <td><label for="rules"></label><input id="rules" type="text" /></td>
+    <td>
+      <label for="isPublic">is public?</label
+      ><input id="isPublic" type="checkbox" />
+    </td>
+    <td><button id="newUpdate" disabled></button></td>
+    <td><button id="remove" disabled>remove</button></td>
+  </tr></template
+>
 
 <!-- template home page -->
-<template id="statsTemplate">
-</template>
+<template id="statsTemplate"> </template>
 
 <script>
-window.onload = async function(e) {
+  window.onload = async function (e) {
     await fragmentChanged();
-}
-window.onhashchange = async function(e) {
+  };
+  window.onhashchange = async function (e) {
     console.log(`new location: ${e.newURL}`);
     await fragmentChanged();
-}
+  };
 
-async function fragmentChanged() {
+  async function fragmentChanged() {
     document.body.innerHTML = "";
 
     switch (location.hash) {
-        case "":
-        case "#":
-            console.log("Loading home page");
-            await loadHomePage();
-            break;
+      case "":
+      case "#":
+        console.log("Loading home page");
+        await loadHomePage();
+        break;
 
-        case "#edit":
-            console.log("Loading edit page");
-            await loadEditPage();
-            break;
+      case "#edit":
+        console.log("Loading edit page");
+        await loadEditPage();
+        break;
 
-        default:
-            console.log("Loading stats page: " + location.hash);
-            await loadStatsPage(location.hash.substring(1));
-            break;
+      default:
+        console.log("Loading stats page: " + location.hash);
+        await loadStatsPage(location.hash.substring(1));
+        break;
     }
-}
+  }
 
-async function getThisUser() {
+  async function getThisUser() {
     let thisUser = await api("/api/login", {});
     if (thisUser != null) {
-        thisUser = thisUser.user;
-        localStorage.setItem("thisUser", thisUser);
+      thisUser = thisUser.user;
+      localStorage.setItem("thisUser", thisUser);
 
-        return thisUser;
+      return thisUser;
     }
-}
+  }
 
-function buildCategoryUI(categories, page) {
+  function buildCategoryUI(categories, page) {
     let table = page.querySelector("table");
     for (let i = 0; i < categories.length; i++) {
-        let category = categories[i];
-        let catElement = categoryTemplate.content.cloneNode(true);
+      let category = categories[i];
+      let catElement = categoryTemplate.content.cloneNode(true);
 
-        let nameField = catElement.querySelector("#name");
-        let ruleField = catElement.querySelector("#rules");
-        let isPublicBox = catElement.querySelector("#isPublic");
-        let updateButton = catElement.querySelector("#newUpdate");
-        let removeButton = catElement.querySelector("#remove");
+      let nameField = catElement.querySelector("#name");
+      let ruleField = catElement.querySelector("#rules");
+      let isPublicBox = catElement.querySelector("#isPublic");
+      let updateButton = catElement.querySelector("#newUpdate");
+      let removeButton = catElement.querySelector("#remove");
 
-        nameField.value = category.name;
-        ruleField.value = category.rules;
-        isPublicBox.checked = category.is_public;
-        updateButton.innerText = "update";
+      nameField.value = category.name;
+      ruleField.value = category.rules;
+      isPublicBox.checked = category.is_public;
+      updateButton.innerText = "update";
 
-        nameField.oninput = (event) => {
-            setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
-        };
-        ruleField.oninput = (event) => {
-            setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
-        };
-        isPublicBox.oninput = (event) => {
-            setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
-        };
+      nameField.oninput = (event) => {
+        setEnabled(
+          updateButton,
+          isUpdateValid(
+            category,
+            nameField.value,
+            ruleField.value,
+            isPublicBox.checked,
+          ),
+        );
+      };
+      ruleField.oninput = (event) => {
+        setEnabled(
+          updateButton,
+          isUpdateValid(
+            category,
+            nameField.value,
+            ruleField.value,
+            isPublicBox.checked,
+          ),
+        );
+      };
+      isPublicBox.oninput = (event) => {
+        setEnabled(
+          updateButton,
+          isUpdateValid(
+            category,
+            nameField.value,
+            ruleField.value,
+            isPublicBox.checked,
+          ),
+        );
+      };
 
-        updateButton.onclick = async (event) => {
-            await api("/api/editCategory", {
-                category_id: category.id,
-                name: nameField.value,
-                rules: ruleField.value,
-                is_public: isPublicBox.checked
-            });
-            await fragmentChanged();
-        }
-        removeButton.removeAttribute("disabled");
-        removeButton.onclick = async (event) => {
-            await api("/api/removeCategory", {category_id: category.id});
-            await fragmentChanged();
-        }
+      updateButton.onclick = async (event) => {
+        await api("/api/editCategory", {
+          category_id: category.id,
+          name: nameField.value,
+          rules: ruleField.value,
+          is_public: isPublicBox.checked,
+        });
+        await fragmentChanged();
+      };
+      removeButton.removeAttribute("disabled");
+      removeButton.onclick = async (event) => {
+        await api("/api/removeCategory", { category_id: category.id });
+        await fragmentChanged();
+      };
 
-        table.appendChild(catElement);
+      table.appendChild(catElement);
     }
 
     let catElement = categoryTemplate.content.cloneNode(true);
@@ -194,128 +243,138 @@ function buildCategoryUI(categories, page) {
     let newButton = catElement.querySelector("#newUpdate");
     newButton.innerText = "new";
     nameField.oninput = (event) => {
-        setEnabled(newButton, isValid(nameField));
+      setEnabled(newButton, isValid(nameField));
     };
     newButton.onclick = async (event) => {
-        await api("/api/addCategory", {name: nameField.value, rules: ruleField.value, is_public: isPublicBox.checked});
-        await fragmentChanged();
-    }
+      await api("/api/addCategory", {
+        name: nameField.value,
+        rules: ruleField.value,
+        is_public: isPublicBox.checked,
+      });
+      await fragmentChanged();
+    };
 
     table.appendChild(catElement);
-}
+  }
 
-async function loadEditPage() {
-    let thisUser = await getThisUser()
-    let categories = await api("/api/listCategories", { username: thisUser, include_private: true });
+  async function loadEditPage() {
+    let thisUser = await getThisUser();
+    let categories = await api("/api/listCategories", {
+      username: thisUser,
+      include_private: true,
+    });
     categories = categories.categories;
 
     let page = editTemplate.content.cloneNode(true);
     page.querySelector("h1").innerText = thisUser;
-    page.querySelector("a").setAttribute("href", "#"+thisUser);
+    page.querySelector("a").setAttribute("href", "#" + thisUser);
 
     let table = page.querySelector("table");
-    let catCombo = page.querySelector("#categories")
-    categories.forEach(c => {
-        let opt = document.createElement("option");
-        opt.setAttribute("value", c.id);
-        opt.innerText = c.name;
-        catCombo.appendChild(opt);
+    let catCombo = page.querySelector("#categories");
+    categories.forEach((c) => {
+      let opt = document.createElement("option");
+      opt.setAttribute("value", c.id);
+      opt.innerText = c.name;
+      catCombo.appendChild(opt);
     });
-    catCombo.onchange = async e => {
-        let categoryId = parseInt(catCombo.options[catCombo.selectedIndex].value);
+    catCombo.onchange = async (e) => {
+      let categoryId = parseInt(catCombo.options[catCombo.selectedIndex].value);
 
-        await populateDataTable(thisUser, table, categoryId)
+      await populateDataTable(thisUser, table, categoryId);
     };
 
     if (categories.length > 0) {
-        await populateDataTable(thisUser, table, categories[0].id)
+      await populateDataTable(thisUser, table, categories[0].id);
     }
 
     document.body.appendChild(page);
-}
+  }
 
-async function populateDataTable(user, table, categoryId) {
+  async function populateDataTable(user, table, categoryId) {
     let data = await api("/api/listData", { category_id: categoryId });
     data = data.data;
 
     while (table.rows.length >= 2) {
-        table.deleteRow(-1);
+      table.deleteRow(-1);
     }
 
     let i = 1;
-    data.forEach(d => {
-        let dataElement = dataTemplate.content.cloneNode(true);
+    data.forEach((d) => {
+      let dataElement = dataTemplate.content.cloneNode(true);
 
-        let valueField = dataElement.querySelector("#value");
-        let dateField = dataElement.querySelector("#dataDate");
-        let updateButton = dataElement.querySelector("#dataUpdate");
-        let removeButton = dataElement.querySelector("#dataRemove");
+      let valueField = dataElement.querySelector("#value");
+      let dateField = dataElement.querySelector("#dataDate");
+      let updateButton = dataElement.querySelector("#dataUpdate");
+      let removeButton = dataElement.querySelector("#dataRemove");
 
-        valueField.value = d.value;
-        dateField.valueAsDate = new Date(d.time);
+      valueField.value = d.value;
+      dateField.valueAsDate = new Date(d.time);
 
-        valueField.oninput = (event) => {
-            setEnabled(updateButton, isDataUpdateValid(d, valueField.value));
-        };
-        updateButton.onclick = async e => {
-            await api("/api/editData", {
-                category_id: categoryId,
-                data_id: d.id,
-                new_value: valueField.value
-            });
-            alert("Data edited");
-            d.value = valueField.value;
-            setEnabled(updateButton, false);
-        };
-        let idx = i;
-        removeButton.onclick = async e => {
-            await api("/api/removeData", {
-                category_id: categoryId,
-                data_id: d.id
-            });
-            alert("Data removed");
-            table.deleteRow(idx);
-        };
+      valueField.oninput = (event) => {
+        setEnabled(updateButton, isDataUpdateValid(d, valueField.value));
+      };
+      updateButton.onclick = async (e) => {
+        await api("/api/editData", {
+          category_id: categoryId,
+          data_id: d.id,
+          new_value: valueField.value,
+        });
+        alert("Data edited");
+        d.value = valueField.value;
+        setEnabled(updateButton, false);
+      };
+      let idx = i;
+      removeButton.onclick = async (e) => {
+        await api("/api/removeData", {
+          category_id: categoryId,
+          data_id: d.id,
+        });
+        alert("Data removed");
+        table.deleteRow(idx);
+      };
 
-        i++;
+      i++;
 
-        table.appendChild(dataElement);
+      table.appendChild(dataElement);
     });
-}
+  }
 
-async function loadHomePage() {
-    let thisUser = await getThisUser()
-    let categories = await api("/api/listCategories", { username: thisUser, include_private: true });
+  async function loadHomePage() {
+    let thisUser = await getThisUser();
+    let categories = await api("/api/listCategories", {
+      username: thisUser,
+      include_private: true,
+    });
     categories = categories.categories;
 
     let page = homeTemplate.content.cloneNode(true);
     page.querySelector("h1").innerText = thisUser;
-    page.querySelector("a").setAttribute("href", "#"+thisUser);
+    page.querySelector("a").setAttribute("href", "#" + thisUser);
 
     let whenInput = page.querySelector("#inputDate");
     let valueInput = page.querySelector("#inputText");
     whenInput.valueAsDate = new Date();
-    let catCombo = page.querySelector("#selectCategory")
-    categories.forEach(c => {
-       let opt = document.createElement("option");
-       opt.setAttribute("value", c.id);
-       opt.innerText = c.name;
-       catCombo.appendChild(opt);
+    let catCombo = page.querySelector("#selectCategory");
+    categories.forEach((c) => {
+      let opt = document.createElement("option");
+      opt.setAttribute("value", c.id);
+      opt.innerText = c.name;
+      catCombo.appendChild(opt);
     });
     let addButton = page.querySelector("#addData");
 
     addButton.onclick = async (event) => {
-        let categoryId = parseInt(catCombo.options[catCombo.selectedIndex].value);
+      let categoryId = parseInt(catCombo.options[catCombo.selectedIndex].value);
 
-        await api("/api/addData", {
-            category_id: categoryId,
-            data: {
-                time: whenInput.valueAsDate.getTime(),
-                value: valueInput.value
-            }
-        });
-        await fragmentChanged();
-        alert("Data added");
+      await api("/api/addData", {
+        category_id: categoryId,
+        data: {
+          time: whenInput.valueAsDate.getTime(),
+          value: valueInput.value,
+        },
+      });
+      await fragmentChanged();
+      alert("Data added");
     };
 
     buildCategoryUI(categories, page);
@@ -324,414 +383,436 @@ async function loadHomePage() {
     let confirmNewPassword = page.querySelector("#confirmNewPassword");
     let updatePassword = page.querySelector("#updateAccountSettings");
     confirmNewPassword.oninput = (event) => {
-        setEnabled(updatePassword, newPassword.value.length > 0 && newPassword.value === confirmNewPassword.value);
+      setEnabled(
+        updatePassword,
+        newPassword.value.length > 0 &&
+          newPassword.value === confirmNewPassword.value,
+      );
     };
 
     updatePassword.onclick = async (event) => {
-        if (newPassword.value !== confirmNewPassword.value) {
-            return;
-        }
+      if (newPassword.value !== confirmNewPassword.value) {
+        return;
+      }
 
-        await api("/api/updatePassword", {new_password: newPassword.value });
-        await fragmentChanged();
-        alert("Password changed");
+      await api("/api/updatePassword", { new_password: newPassword.value });
+      await fragmentChanged();
+      alert("Password changed");
+    };
+
+    document.body.appendChild(page);
+  }
+
+  function isUpdateValid(category, name, rule, checked) {
+    return (
+      category.name !== name ||
+      category.rules !== rule ||
+      category.is_public !== checked
+    );
+  }
+
+  function isDataUpdateValid(data, value) {
+    return data.value !== value;
+  }
+
+  function isValid(nameField) {
+    return nameField.value.length > 0;
+  }
+
+  async function loadStatsPage(user) {
+    let thisUser = localStorage.getItem("thisUser");
+    let lookingAtOwnPage = thisUser === user;
+    let categories = await api("/api/listCategories", {
+      username: user,
+      include_private: lookingAtOwnPage,
+    });
+    console.log(categories);
+
+    let page = statsTemplate.content.cloneNode(true);
+
+    for (const category of categories.categories) {
+      let data = await api("/api/listData", { category_id: category.id });
+      console.log(data);
+
+      let rules = parseRules(category.rules);
+
+      let title = document.createElement("h1");
+      title.innerText = category.name;
+      page.appendChild(title);
+      let heatmap = getHeatmap(data.data, rules);
+      page.appendChild(heatmap);
     }
 
     document.body.appendChild(page);
-}
+  }
 
-function isUpdateValid(category, name, rule, checked) {
-    return category.name !== name || category.rules !== rule || category.is_public !== checked;
-}
+  function getHeatmap(data, rules) {
+    let table = document.createElement("table");
 
-function isDataUpdateValid(data, value) {
-    return data.value !== value;
-}
-
-function isValid(nameField) {
-    return nameField.value.length > 0;
-}
-
-async function loadStatsPage(user) {
-    let thisUser = localStorage.getItem("thisUser");
-    let lookingAtOwnPage = thisUser === user;
-	let categories = await api("/api/listCategories", { username: user, include_private: lookingAtOwnPage });
-	console.log(categories);
-
-	let page = statsTemplate.content.cloneNode(true);
-
-	for (const category of categories.categories) {
-		let data = await api("/api/listData", { category_id: category.id });
-		console.log(data);
-
-		let rules = parseRules(category.rules);
-
-		let title = document.createElement("h1");
-		title.innerText = category.name;
-		page.appendChild(title);
-		let heatmap = getHeatmap(data.data, rules);
-		page.appendChild(heatmap);
-	}
-
-	document.body.appendChild(page);
-}
-
-function getHeatmap(data, rules) {
-	let table = document.createElement("table");
-
-	let colA = rules.fromCol != null ? rules.fromCol : "#c5ffc2";
-	let colB = rules.toCol != null ? rules.toCol : "#51ff47";
+    let colA = rules.fromCol != null ? rules.fromCol : "#c5ffc2";
+    let colB = rules.toCol != null ? rules.toCol : "#51ff47";
 
     let now = new Date();
     let daysOfYear = [];
     let start = new Date(now.getFullYear(), 0, 1);
-	let end = new Date(now.getFullYear() + 1, 0, 1);
-	for (let d = start; d < end; d.setDate(d.getDate() + 1)) {
-		daysOfYear.push(new Date(d));
-	}
+    let end = new Date(now.getFullYear() + 1, 0, 1);
+    for (let d = start; d < end; d.setDate(d.getDate() + 1)) {
+      daysOfYear.push(new Date(d));
+    }
 
     let max = getMax(data, rules.method);
     let min = getMin(data, rules.method);
 
-	let weekDays = [
-		document.createElement("tr"),
-		document.createElement("tr"),
-		document.createElement("tr"),
-		document.createElement("tr"),
-		document.createElement("tr"),
-		document.createElement("tr"),
-		document.createElement("tr"),
-	];
+    let weekDays = [
+      document.createElement("tr"),
+      document.createElement("tr"),
+      document.createElement("tr"),
+      document.createElement("tr"),
+      document.createElement("tr"),
+      document.createElement("tr"),
+      document.createElement("tr"),
+    ];
 
-	let monthHeaders = document.createElement("tr");
-	monthHeaders.classList.toggle("months");
-	monthHeaders.appendChild(document.createElement("td"));
-	for (let i = 0; i < 52; i++) {
-		monthHeaders.appendChild(document.createElement("th"));
-	}
+    let monthHeaders = document.createElement("tr");
+    monthHeaders.classList.toggle("months");
+    monthHeaders.appendChild(document.createElement("td"));
+    for (let i = 0; i < 52; i++) {
+      monthHeaders.appendChild(document.createElement("th"));
+    }
 
-	let i = 0;
-	const MONTHS = [
-		"JAN",
-		"FEB",
-		"MAR",
-		"APR",
-		"MAY",
-		"JUN",
-		"JUL",
-		"AUG",
-		"SEP",
-		"OCT",
-		"NOV",
-		"DEC",
-	];
+    let i = 0;
+    const MONTHS = [
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC",
+    ];
 
-	i = 0;
-	const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
-	weekDays.forEach(d => {
-		let day = document.createElement("th");
-		day.innerText = DAYS[i++];
-		d.appendChild(day);
-	});
+    i = 0;
+    const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
+    weekDays.forEach((d) => {
+      let day = document.createElement("th");
+      day.innerText = DAYS[i++];
+      d.appendChild(day);
+    });
 
-	table.appendChild(monthHeaders);
-	weekDays.forEach(d => table.appendChild(d));
+    table.appendChild(monthHeaders);
+    weekDays.forEach((d) => table.appendChild(d));
 
-	let weeklySumRow = document.createElement("tr");
-	weeklySumRow.appendChild(document.createElement("td"));
-	if (rules.style === "weekly-sum" || rules.style === "weekly-avg") {
-		table.appendChild(weeklySumRow);
-	}
+    let weeklySumRow = document.createElement("tr");
+    weeklySumRow.appendChild(document.createElement("td"));
+    if (rules.style === "weekly-sum" || rules.style === "weekly-avg") {
+      table.appendChild(weeklySumRow);
+    }
 
-	let padding = daysOfYear[0].getDay();
-	for (i = 0; i < padding; i++) {
-		weekDays[i].appendChild(document.createElement("td"));
-	}
+    let padding = daysOfYear[0].getDay();
+    for (i = 0; i < padding; i++) {
+      weekDays[i].appendChild(document.createElement("td"));
+    }
 
-    let weeklyPrecision = rules.weeklyPrecision != null ? parseInt(rules.weeklyPrecision) : 0;
-	i = 0;
-	let prevMonth = -1;
-	let prevWeekDay = -1;
-	let weeklySum = 0;
+    let weeklyPrecision =
+      rules.weeklyPrecision != null ? parseInt(rules.weeklyPrecision) : 0;
+    i = 0;
+    let prevMonth = -1;
+    let prevWeekDay = -1;
+    let weeklySum = 0;
     let weeklyDataCount = 0;
-	daysOfYear.forEach(d => {
-		let weekDay = d.getDay();
+    daysOfYear.forEach((d) => {
+      let weekDay = d.getDay();
 
-		let isNewWeek = prevWeekDay > weekDay;
-		prevWeekDay = weekDay;
+      let isNewWeek = prevWeekDay > weekDay;
+      prevWeekDay = weekDay;
 
-		if (isNewWeek) {
-            if (rules.style === "weekly-sum") {
-                let weekSum = document.createElement("td");
-                let d = document.createElement("span");
-                d.classList.toggle("sumText");
-                if (weeklySum > 0) {
-                    d.innerText = ""+weeklySum.toFixed(weeklyPrecision);
-                }
-                weekSum.appendChild(d);
+      if (isNewWeek) {
+        if (rules.style === "weekly-sum") {
+          let weekSum = document.createElement("td");
+          let d = document.createElement("span");
+          d.classList.toggle("sumText");
+          if (weeklySum > 0) {
+            d.innerText = "" + weeklySum.toFixed(weeklyPrecision);
+          }
+          weekSum.appendChild(d);
 
-                weeklySumRow.appendChild(weekSum);
-            } else if (rules.style === "weekly-avg") {
-                let weekSum = document.createElement("td");
-                let d = document.createElement("span");
-                d.classList.toggle("sumText");
-                if (weeklySum > 0) {
-                    d.innerText = ""+(weeklySum/weeklyDataCount).toFixed(weeklyPrecision);
-                }
-                weekSum.appendChild(d);
+          weeklySumRow.appendChild(weekSum);
+        } else if (rules.style === "weekly-avg") {
+          let weekSum = document.createElement("td");
+          let d = document.createElement("span");
+          d.classList.toggle("sumText");
+          if (weeklySum > 0) {
+            d.innerText =
+              "" + (weeklySum / weeklyDataCount).toFixed(weeklyPrecision);
+          }
+          weekSum.appendChild(d);
 
-                weeklySumRow.appendChild(weekSum);
-            }
+          weeklySumRow.appendChild(weekSum);
+        }
 
-            weeklyDataCount = 0;
-            weeklySum = 0;
-		}
+        weeklyDataCount = 0;
+        weeklySum = 0;
+      }
 
-		let isToday = new Date().setHours(0,0,0,0) == new Date(d).setHours(0,0,0,0);
-		let dataToday = findData(data, d);
+      let isToday =
+        new Date().setHours(0, 0, 0, 0) == new Date(d).setHours(0, 0, 0, 0);
+      let dataToday = findData(data, d);
 
-		let inner = document.createElement("div");
-		inner.classList.toggle("box");
-		inner.classList.toggle("today", isToday);
-		inner.classList.toggle("m"+d.getMonth());
+      let inner = document.createElement("div");
+      inner.classList.toggle("box");
+      inner.classList.toggle("today", isToday);
+      inner.classList.toggle("m" + d.getMonth());
 
-		
+      if (dataToday.length > 0) {
+        weeklyDataCount++;
+        let value = getValues(dataToday, max, rules.method);
+        console.log(value);
 
-		if (dataToday.length > 0) {
-            weeklyDataCount++;
-			let value = getValues(dataToday, max, rules.method);
-			console.log(value);
+        if (rules.pizza != null) {
+          inner.style.backgroundImage =
+            'url("https://assets.axfood.se/image/upload/f_auto,t_500/04001724039112_C1L1_s02")';
+          inner.style.backgroundSize = "cover";
+          if (value < 1.0) {
+            inner.style.width = `${value}em`;
+          }
+        } else {
+          inner.style.background = colInterp(
+            colA,
+            colB,
+            max === min ? 0 : (value - min) / (max - min),
+          );
+        }
+        inner.setAttribute("title", "" + value);
+        weeklySum += value;
+      }
 
-		if (rules.pizza != null) {
-			inner.style.backgroundImage = 'url("https://assets.axfood.se/image/upload/f_auto,t_500/04001724039112_C1L1_s02")';
-			inner.style.backgroundSize = 'cover';
-			if (value < 1.0) {
-	inner.style.width = `${value}em`;
-}
-		} else {
-			inner.style.background = colInterp(colA, colB, max === min ? 0 : (value - min) / (max - min));
-		}
-            inner.setAttribute("title", ""+value);
-			weeklySum += value;
-		}
+      let dayData = document.createElement("td");
+      dayData.appendChild(inner);
 
-		let dayData = document.createElement("td");
-		dayData.appendChild(inner);
+      weekDays[weekDay].appendChild(dayData);
+      let m = d.getMonth();
 
-		weekDays[weekDay].appendChild(dayData);
-		let m = d.getMonth();
+      if (m !== prevMonth) {
+        prevMonth = m;
+        let col = weekDays[weekDay].children.length - 1;
+        monthHeaders.cells[col - m * 2].innerText = MONTHS[m];
+        monthHeaders.cells[col - m * 2].colSpan = 3;
 
-		if (m !== prevMonth) {
-			prevMonth = m;
-			let col = weekDays[weekDay].children.length - 1;
-			monthHeaders.cells[col - (m * 2)].innerText = MONTHS[m];
-			monthHeaders.cells[col - (m * 2)].colSpan = 3;
+        monthHeaders.cells[col - m * 2].onmouseenter = (event) => {
+          let monthDays = table.querySelectorAll(".m" + m);
+          monthDays.forEach((d) => d.classList.toggle("hilite", true));
+        };
+        monthHeaders.cells[col - m * 2].onmouseleave = (event) => {
+          let monthDays = table.querySelectorAll(".m" + m);
+          monthDays.forEach((d) => d.classList.toggle("hilite", false));
+        };
+        monthHeaders.deleteCell(col - m * 2 + 1);
+        monthHeaders.deleteCell(col - m * 2 + 1);
+      }
+    });
 
-			monthHeaders.cells[col - (m * 2)].onmouseenter = (event) => {
-				let monthDays = table.querySelectorAll(".m"+m);
-				monthDays.forEach(d => d.classList.toggle("hilite", true));
-			};
-			monthHeaders.cells[col - (m * 2)].onmouseleave = (event) => {
-				let monthDays = table.querySelectorAll(".m"+m);
-				monthDays.forEach(d => d.classList.toggle("hilite", false));
-			};
-			monthHeaders.deleteCell(col - (m * 2) +1);
-			monthHeaders.deleteCell(col - (m * 2) +1);
-		}
-	});
+    return table;
+  }
 
-	return table;
-}
+  function getValues(data, max, method) {
+    if (method === "sum") {
+      return data.reduce((a, b) => {
+        let value = parseFloat(b.value);
 
-function getValues(data, max, method) {
-	if (method === "sum") {
-        return data.reduce((a, b) => {
-            let value = parseFloat(b.value);
-
-            if (!isNaN(value)) {
-                return value;
-            } else {
-                return 0;
-            }
-        }, 0);
+        if (!isNaN(value)) {
+          return value;
+        } else {
+          return 0;
+        }
+      }, 0);
     }
 
     if (method === "avg") {
-        let i = 0;
-        return data.reduce((a, b) => {
-            let value = parseFloat(b.value);
+      let i = 0;
+      return (
+        data.reduce((a, b) => {
+          let value = parseFloat(b.value);
 
-            if(!isNaN(value)) {
-                i++;
-                return a + value;
-            } else {
-                return 0;
-            }
-        }, 0) / i;
+          if (!isNaN(value)) {
+            i++;
+            return a + value;
+          } else {
+            return 0;
+          }
+        }, 0) / i
+      );
     }
 
     // count
     return data.length;
-}
+  }
 
-function getDayValues(data, method) {
+  function getDayValues(data, method) {
     let days = new Array(366).fill(null);
 
     if (method === "sum") {
-        data.forEach(d => {
-            let yearDay = getDayOfYear(new Date(d.time));
-            var value = parseFloat(d.value);
+      data.forEach((d) => {
+        let yearDay = getDayOfYear(new Date(d.time));
+        var value = parseFloat(d.value);
 
-            if(!isNaN(value)) {
-                if (days[yearDay] == null) {
-                    days[yearDay] = 0;
-                }
-                days[yearDay] += value;
-            }
-        });
-    } else if (method === "avg") {
-        let counts = new Array(366).fill(0);
-
-        data.forEach(d => {
-            let yearDay = getDayOfYear(new Date(d.time));
-            var value = parseFloat(d.value);
-
-            if(!isNaN(value)) {
-                if (days[yearDay] == null) {
-                    days[yearDay] = 0;
-                }
-                counts[yearDay]++;
-                days[yearDay] += value;
-            }
-        });
-
-        for (let i = 0; i < days.length; i++) {
-            if (days[i] != null) {
-                days[i] /= counts[i];
-            }
+        if (!isNaN(value)) {
+          if (days[yearDay] == null) {
+            days[yearDay] = 0;
+          }
+          days[yearDay] += value;
         }
+      });
+    } else if (method === "avg") {
+      let counts = new Array(366).fill(0);
+
+      data.forEach((d) => {
+        let yearDay = getDayOfYear(new Date(d.time));
+        var value = parseFloat(d.value);
+
+        if (!isNaN(value)) {
+          if (days[yearDay] == null) {
+            days[yearDay] = 0;
+          }
+          counts[yearDay]++;
+          days[yearDay] += value;
+        }
+      });
+
+      for (let i = 0; i < days.length; i++) {
+        if (days[i] != null) {
+          days[i] /= counts[i];
+        }
+      }
     } else {
-        // frequency
-        data.forEach(d => {
-            let yearDay = getDayOfYear(new Date(d.time));
-            if (days[yearDay] == null) {
-                days[yearDay] = 0;
-            }
-            days[yearDay] += 1;
-        });
+      // frequency
+      data.forEach((d) => {
+        let yearDay = getDayOfYear(new Date(d.time));
+        if (days[yearDay] == null) {
+          days[yearDay] = 0;
+        }
+        days[yearDay] += 1;
+      });
     }
 
     return days;
-}
+  }
 
-function getMax(data, method) {
+  function getMax(data, method) {
     let days = getDayValues(data, method);
 
-	return days.reduce((a, b) => b != null ? Math.max(a, b) : a, -Infinity);
-}
+    return days.reduce((a, b) => (b != null ? Math.max(a, b) : a), -Infinity);
+  }
 
-function getMin(data, method) {
+  function getMin(data, method) {
     let days = getDayValues(data, method);
 
-    return days.reduce((a, b) => b != null ? Math.min(a, b) : a, Infinity);
-}
+    return days.reduce((a, b) => (b != null ? Math.min(a, b) : a), Infinity);
+  }
 
-function getDayOfYear(d) {
+  function getDayOfYear(d) {
     let start = new Date(d.getFullYear(), 0, 0);
     let diff = d - start;
     let oneDay = 1000 * 60 * 60 * 24;
     return Math.floor(diff / oneDay);
-}
+  }
 
-function findData(data, day) {
-	let newData = [];
-	data.forEach(d => {
-		if (new Date(day).setHours(0, 0, 0, 0) == new Date(d.time).setHours(0, 0, 0, 0)) {
-			newData.push(d);
-		}
-	});
+  function findData(data, day) {
+    let newData = [];
+    data.forEach((d) => {
+      if (
+        new Date(day).setHours(0, 0, 0, 0) ==
+        new Date(d.time).setHours(0, 0, 0, 0)
+      ) {
+        newData.push(d);
+      }
+    });
 
-	return newData;
-}
+    return newData;
+  }
 
-function colInterp(ca, cb, percent) {
-	const r1 = parseInt(ca.substring(1, 3), 16);
-	const g1 = parseInt(ca.substring(3, 5), 16);
-	const b1 = parseInt(ca.substring(5, 7), 16);
+  function colInterp(ca, cb, percent) {
+    const r1 = parseInt(ca.substring(1, 3), 16);
+    const g1 = parseInt(ca.substring(3, 5), 16);
+    const b1 = parseInt(ca.substring(5, 7), 16);
 
-	const r2 = parseInt(cb.substring(1, 3), 16);
-	const g2 = parseInt(cb.substring(3, 5), 16);
-	const b2 = parseInt(cb.substring(5, 7), 16);
+    const r2 = parseInt(cb.substring(1, 3), 16);
+    const g2 = parseInt(cb.substring(3, 5), 16);
+    const b2 = parseInt(cb.substring(5, 7), 16);
 
-	const r = Math.round(r1 + (r2 - r1) * percent);
-	const g = Math.round(g1 + (g2 - g1) * percent);
-	const b = Math.round(b1 + (b2 - b1) * percent);
+    const r = Math.round(r1 + (r2 - r1) * percent);
+    const g = Math.round(g1 + (g2 - g1) * percent);
+    const b = Math.round(b1 + (b2 - b1) * percent);
 
-	return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-}
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  }
 
-function setEnabled(element, enabled) {
+  function setEnabled(element, enabled) {
     if (enabled) {
-        element.removeAttribute("disabled");
+      element.removeAttribute("disabled");
     } else {
-        element.setAttribute("disabled", "disabled");
+      element.setAttribute("disabled", "disabled");
     }
-}
+  }
 
-function parseRules(rules) {
-	let dict = {};
-	let entries = rules.split(";");
-	entries.forEach(e => {
-		let parts = e.split("=");
-		if (parts.length == 2) {
-			dict[parts[0]] = parts[1];
-		}
-	});
+  function parseRules(rules) {
+    let dict = {};
+    let entries = rules.split(";");
+    entries.forEach((e) => {
+      let parts = e.split("=");
+      if (parts.length == 2) {
+        dict[parts[0]] = parts[1];
+      }
+    });
 
-	return dict;
-}
+    return dict;
+  }
 
-function timeSince(date) {
+  function timeSince(date) {
     var seconds = Math.floor((new Date() - date) / 1000);
     var interval = seconds / 31536000;
 
     if (interval > 1) {
-        return Math.floor(interval) + " years";
+      return Math.floor(interval) + " years";
     }
     interval = seconds / 2592000;
     if (interval > 1) {
-        return Math.floor(interval) + " months";
+      return Math.floor(interval) + " months";
     }
     interval = seconds / 86400;
     if (interval > 1) {
-        return Math.floor(interval) + " days";
+      return Math.floor(interval) + " days";
     }
     interval = seconds / 3600;
     if (interval > 1) {
-        return Math.floor(interval) + " hours";
+      return Math.floor(interval) + " hours";
     }
     interval = seconds / 60;
     if (interval > 1) {
-        return Math.floor(interval) + " minutes";
+      return Math.floor(interval) + " minutes";
     }
     return Math.floor(seconds) + " seconds";
-}
+  }
 
-function api(url, data) {
-	return fetch(url, {
-		method: "post",
-		headers: {
-			'Content-type': 'application/json'
-		},
-		body: JSON.stringify(data),
-	}).then((response) => {
-        if (!response.ok) {
-            return null;
-        }
+  function api(url, data) {
+    return fetch(url, {
+      method: "post",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }).then((response) => {
+      if (!response.ok) {
+        return null;
+      }
 
-        return response.json();
+      return response.json();
     });
-}
+  }
 </script>
 
 <!-- vi: set sw=4 ts=4: -->
