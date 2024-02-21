@@ -158,13 +158,13 @@ function buildCategoryUI(categories, page) {
         isPublicBox.checked = category.is_public;
         updateButton.innerText = "update";
 
-        nameField.onchange = (event) => {
+        nameField.oninput = (event) => {
             setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
         };
-        ruleField.onchange = (event) => {
+        ruleField.oninput = (event) => {
             setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
         };
-        isPublicBox.onchange = (event) => {
+        isPublicBox.oninput = (event) => {
             setEnabled(updateButton, isUpdateValid(category, nameField.value, ruleField.value, isPublicBox.checked));
         };
 
@@ -193,7 +193,7 @@ function buildCategoryUI(categories, page) {
     let isPublicBox = catElement.querySelector("#isPublic");
     let newButton = catElement.querySelector("#newUpdate");
     newButton.innerText = "new";
-    nameField.onchange = (event) => {
+    nameField.oninput = (event) => {
         setEnabled(newButton, isValid(nameField));
     };
     newButton.onclick = async (event) => {
@@ -254,7 +254,7 @@ async function populateDataTable(user, table, categoryId) {
         valueField.value = d.value;
         dateField.valueAsDate = new Date(d.time);
 
-        valueField.onchange = (event) => {
+        valueField.oninput = (event) => {
             setEnabled(updateButton, isDataUpdateValid(d, valueField.value));
         };
         updateButton.onclick = async e => {
@@ -323,7 +323,7 @@ async function loadHomePage() {
     let newPassword = page.querySelector("#newPassword");
     let confirmNewPassword = page.querySelector("#confirmNewPassword");
     let updatePassword = page.querySelector("#updateAccountSettings");
-    confirmNewPassword.onchange = (event) => {
+    confirmNewPassword.oninput = (event) => {
         setEnabled(updatePassword, newPassword.value.length > 0 && newPassword.value === confirmNewPassword.value);
     };
 
