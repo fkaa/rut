@@ -451,6 +451,8 @@
 
     let colA = rules.fromCol != null ? rules.fromCol : "#c5ffc2";
     let colB = rules.toCol != null ? rules.toCol : "#51ff47";
+    let colors = rules.colors != null ? rules.colors.split(',') : null;
+    let colorValues = rules.colorValues != null ? rules.colorValues.split(',') : null;
 
     let now = new Date();
     let daysOfYear = [];
@@ -581,11 +583,23 @@
             inner.style.width = `${value}em`;
           }
         } else {
-          inner.style.background = colInterp(
-            colA,
-            colB,
-            max === min ? 0 : (value - min) / (max - min),
-          );
+		  if (colors != null) {
+			  let color = colA;
+
+			  for (let i = 0; i < Math.min(colors.length, colorValues.length); i++) {
+				  if (dataToday[0].value == colorValues[i]) {
+					color = colors[i];
+				  }
+			  }
+
+			  inner.style.background = color;
+		  } else {
+			  inner.style.background = colInterp(
+				colA,
+				colB,
+				max === min ? 0 : (value - min) / (max - min),
+			  );
+		  }
         }
         inner.setAttribute("title", "" + value);
         weeklySum += value;
